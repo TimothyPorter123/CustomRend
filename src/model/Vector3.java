@@ -44,6 +44,10 @@ public class Vector3 {
     return new Vector2(this.x, this.y);
   }
 
+  public static Vector3 lerp(Vector3 v0, Vector3 v1, float factor) {
+    return v0.plus((v1.minus(v0)).scale(factor));
+  }
+
   @Override
   public String toString() {
     return "(" + this.x + ", " + this.y + ", " + this.z + ")";

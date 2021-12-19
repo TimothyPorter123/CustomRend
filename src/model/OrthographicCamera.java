@@ -4,8 +4,6 @@ public class OrthographicCamera extends Camera {
 
   float orthographicWidth;
   float orthographicHeight;
-  float nearClipPlane;
-  float farClipPlane;
 
   TransformMatrix projectionMatrix;
 

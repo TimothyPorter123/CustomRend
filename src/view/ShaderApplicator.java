@@ -39,7 +39,7 @@ public class ShaderApplicator {
     shader.setModelMatrix(M);
     shader.setViewMatrix(V);
     shader.setProjectionMatrix(P);
-    this.preformAllCulling(verts, vertsToRender, M, V, P);
+    //this.preformAllCulling(verts, vertsToRender, M, V, P);
     for (int i = 0; i < vertsToRender.length; i += 3) {
       Vector3 normal = Vector3.cross(verts[vertsToRender[i + 2]].minus(verts[vertsToRender[i]]),
               verts[vertsToRender[i + 1]].minus(verts[vertsToRender[i]])).normalized();
@@ -59,8 +59,16 @@ public class ShaderApplicator {
       Vector2 clipPos2 = vertToFragData[i + 1].clipPos.xy();
       Vector2 clipPos3 = vertToFragData[i + 2].clipPos.xy();
 
-      for (int y = 0; y < screenHeight; y++) {
-        for (int x = 0; x < screenWidth; x++) {
+      Vector2 rastStart = new Vector2(1, 1);
+      Vector2 rastEnd = new Vector2(0, 0);
+
+      rastStart.x = Math.max(Math.min(clipPos1.x, Math.min(clipPos2.x, Math.min(clipPos3.x, 1))), 0) * screenWidth;
+      rastStart.y = Math.max(Math.min(clipPos1.y, Math.min(clipPos2.y, Math.min(clipPos3.y, 1))), 0) * screenHeight;
+      rastEnd.x = Math.min(Math.max(clipPos1.x, Math.max(clipPos2.x, Math.max(clipPos3.x, 0))), 1) * screenWidth;
+      rastEnd.y = Math.min(Math.max(clipPos1.y, Math.max(clipPos2.y, Math.max(clipPos3.y, 0))), 1) * screenHeight;
+
+      for (int y = (int)rastStart.y; y < (int)rastEnd.y; y++) {
+        for (int x = (int)rastStart.x; x < (int)rastEnd.x; x++) {
           Vector2 point = new Vector2((float) x / screenWidth, (float) y / screenHeight);
           if (barycentricInside(point,
                   clipPos1, clipPos2, clipPos3)) {

@@ -3,8 +3,6 @@ package model;
 public class PerspectiveCamera extends Camera{
 
   float fieldOfView;
-  float nearClipPlane;
-  float farClipPlane;
   float aspectRatio;
 
   TransformMatrix projectionMatrix;

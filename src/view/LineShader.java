@@ -14,6 +14,10 @@ public class LineShader implements Shader {
     this.color = color;
   }
 
+  public void setColor(Color color) {
+    this.color = color;
+  }
+
 
   @Override
   public VertexToFragment vert(VertexData v) {

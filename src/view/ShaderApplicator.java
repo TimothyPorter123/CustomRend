@@ -2,9 +2,12 @@ package view;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.util.Arrays;
+import java.util.List;
 import java.util.ArrayList;
 
 import model.Camera;
+import model.Mesh;
 import model.RenderObjectModel;
 import model.RenderOutput;
 import model.SimpleModel;
@@ -30,9 +33,6 @@ public class ShaderApplicator {
   }
 
   public RenderOutput renderObjectOver(SimpleModel model, Camera camera, BufferedImage base, BufferedImage buffer) {
-    Vector3[] verts = model.getVertices();
-    int[] vertsToRender = model.getTriangles();
-    VertexToFragment[] vertToFragData = new VertexToFragment[vertsToRender.length];
     TransformMatrix M = model.getTransform();
     TransformMatrix V = camera.getTransform().inverse();
     TransformMatrix P = camera.getProjectionMatrix();
@@ -40,6 +40,20 @@ public class ShaderApplicator {
     shader.setViewMatrix(V);
     shader.setProjectionMatrix(P);
     //this.preformAllCulling(verts, vertsToRender, M, V, P);
+
+    Mesh toRender = new Mesh(model.getVertices(), model.getTriangles());
+
+    Vector3 viewPlanePosition = camera.getTransform().apply(new Vector3(0, 0, 0));
+    Vector3 viewPlaneNormal = camera.getTransform().apply(new Vector3(0, 0, 1)).minus(viewPlanePosition).normalized();
+    viewPlanePosition = viewPlanePosition.plus(viewPlaneNormal.scale(camera.getNearClipPlane()));
+    //THIS DOES ALL BACK CAMERA CLIPPING
+    TransformMatrix IM = M.inverse();
+    Mesh clippedMesh = clipMeshAgainstPlane(toRender, IM.apply(viewPlanePosition), IM.apply(viewPlaneNormal));
+
+    Vector3[] verts = clippedMesh.verts;
+    int[] vertsToRender = clippedMesh.tris;
+    VertexToFragment[] vertToFragData = new VertexToFragment[vertsToRender.length];
+
     for (int i = 0; i < vertsToRender.length; i += 3) {
       Vector3 normal = Vector3.cross(verts[vertsToRender[i + 2]].minus(verts[vertsToRender[i]]),
               verts[vertsToRender[i + 1]].minus(verts[vertsToRender[i]])).normalized();
@@ -198,6 +212,96 @@ public class ShaderApplicator {
             + point3.x * (point1.y - point2.y)));
   }
 
+  static Mesh clipMeshAgainstPlane(Mesh mesh, Vector3 pos, Vector3 normal) {
+    Vector3[] verts = mesh.verts;
+    int[] tris = mesh.tris;
+    List<Integer> modTris = new ArrayList<Integer>();
+    List<Vector3> modVerts = new ArrayList<Vector3>();
+    for(Vector3 v : verts) {
+      modVerts.add(v);
+    }
+
+    //do clipping on each triangle
+    for(int i = 0; i < tris.length; i += 3) {
+      int clippedVerts = 0;
+      Vector3 v0 = verts[tris[i]];
+      float dis0 = Vector3.dot(normal, v0.minus(pos));
+      clippedVerts += dis0 < 0 ? 1 : 0;
+      Vector3 v1 = verts[tris[i + 1]];
+      float dis1 = Vector3.dot(normal, v1.minus(pos));
+      clippedVerts += dis1 < 0 ? 1 : 0;
+      Vector3 v2 = verts[tris[i + 2]];
+      float dis2 = Vector3.dot(normal, v2.minus(pos));
+      clippedVerts += dis2 < 0 ? 1 : 0;
+
+      switch (clippedVerts) {
+        case 0:
+          modTris.add(tris[i]); modTris.add(tris[i + 1]); modTris.add(tris[i + 2]);
+          break;
+        case 1:
+          int newVertsIndex = modVerts.size();
+          if(dis0 < 0) {
+            //System.out.println("test1");
+            modVerts.add(Vector3.lerp(v0, v2, -dis0 / (dis2 - dis0)));
+            modVerts.add(Vector3.lerp(v0, v1, -dis0 / (dis1 - dis0)));
+            modTris.add(newVertsIndex); modTris.add(newVertsIndex + 1); modTris.add(tris[i + 1]);
+            modTris.add(newVertsIndex); modTris.add(tris[i + 1]); modTris.add(tris[i + 2]);
+          } else if (dis1 < 0) {
+            //System.out.println("test2");
+            modVerts.add(Vector3.lerp(v1, v0, -dis1 / (dis0 - dis1)));
+            modVerts.add(Vector3.lerp(v1, v2, -dis1 / (dis2 - dis1)));
+            modTris.add(tris[i]); modTris.add(newVertsIndex); modTris.add(newVertsIndex + 1);
+            modTris.add(tris[i]); modTris.add(newVertsIndex + 1); modTris.add(tris[i + 2]);
+          } else {
+            //System.out.println("test3");
+            modVerts.add(Vector3.lerp(v2, v0, -dis2 / (dis0 - dis2)));
+            modVerts.add(Vector3.lerp(v2, v1, -dis2 / (dis1 - dis2)));
+            modTris.add(tris[i]); modTris.add(tris[i + 1]); modTris.add(newVertsIndex + 1);
+            modTris.add(tris[i]); modTris.add(newVertsIndex + 1); modTris.add(newVertsIndex);
+          }
+          break;
+        case 2:
+          newVertsIndex = modVerts.size();
+          if(dis0 >= 0) {
+            //System.out.println("test4");
+            modVerts.add(Vector3.lerp(v2, v0, -dis2 / (dis0 - dis2)));
+            modVerts.add(Vector3.lerp(v1, v0, -dis1 / (dis0 - dis1)));
+            modTris.add(tris[i]); modTris.add(newVertsIndex + 1); modTris.add(newVertsIndex);
+          } else if (dis1 >= 0) {
+            //System.out.println("test5");
+            modVerts.add(Vector3.lerp(v0, v1, -dis0 / (dis1 - dis0)));
+            modVerts.add(Vector3.lerp(v2, v1, -dis2 / (dis1 - dis2)));
+            modTris.add(newVertsIndex); modTris.add(tris[i + 1]); modTris.add(newVertsIndex + 1);
+          } else {
+            //System.out.println("test6");
+            modVerts.add(Vector3.lerp(v0, v2, -dis0 / (dis2 - dis0)));
+            modVerts.add(Vector3.lerp(v1, v2, -dis1 / (dis2 - dis1)));
+            modTris.add(newVertsIndex); modTris.add(newVertsIndex + 1); modTris.add(tris[i + 2]);
+          }
+          break;
+        default:
+          //System.out.println("test7");
+          break;
+      }
+    }
+
+    //clear now unused verts from the array
+    /*for(int v = 0 ; v < modVerts.size(); v++) {
+      if(!modTris.contains(v)) {
+        modVerts.remove(v);
+        for(int i = 0; i < modTris.size(); i++) {
+          tris[i] = tris[i] > v ? tris[i] - 1 : tris[i];
+        }
+      }
+    }*/
+    //convert lists to arrays because apparently java doesn't have a way to do this which isn't awful
+    Vector3[] newVerts = new Vector3[modVerts.size()];
+    for(int v = 0; v < modVerts.size(); v++) { newVerts[v] = modVerts.get(v); }
+    int[] newTris = new int[modTris.size()];
+    for(int i = 0; i < modTris.size(); i++) { newTris[i] = modTris.get(i); }
+    return new Mesh(newVerts, newTris);
+  }
+
   static float decodeDepth(int RGB) {
     return Float.intBitsToFloat(RGB);
     //return (RGB & 255) / 255.0f;
@@ -220,6 +324,7 @@ public class ShaderApplicator {
     return far / (far - near) - (far * near) / (eyeDepth * (far - near));
   }
 
+  //this should be moved to a shader parent class (clearly)
   public static Vector3 worldToClipPos(Vector3 worldPos, TransformMatrix viewMatrix, TransformMatrix projectionMatrix) {
     Vector3 viewPos = viewMatrix.apply(worldPos);
     Vector3 clipPos = projectionMatrix.apply(viewPos);

@@ -9,6 +9,7 @@ import javax.swing.*;
 import model.Camera;
 import model.PerspectiveCamera;
 import model.RenderOutput;
+import model.SimpleTriangle;
 import model.TransformMatrix;
 import model.Vector3;
 import view.LineRenderer;
@@ -23,6 +24,7 @@ public class FrameController {
   Shader standardShader;
   SimpleSquare squareModel;
   SimpleSquare secondSquare;
+  SimpleTriangle triangle;
   TransformMatrix simpleRotate;
   TransformMatrix reverseRotate;
   TransformMatrix simpleMove;
@@ -68,6 +70,8 @@ public class FrameController {
     standardShader = new SimpleShader(Color.blue);
     squareModel = new SimpleSquare();
     secondSquare = new SimpleSquare();
+    triangle = new SimpleTriangle();
+
     simpleRotate = new TransformMatrix().rotate(new Vector3(1.0f, 1.0f, 0.0f));
     reverseRotate = new TransformMatrix().rotate(new Vector3(-1.0f, -1.0f, 0.0f));
     simpleMove = new TransformMatrix().move(new Vector3(0.0f, 0.1f, 0.0f));

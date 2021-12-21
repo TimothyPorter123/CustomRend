@@ -1,6 +1,9 @@
-package model;
+package model.objects;
 
-public class PerspectiveCamera extends Camera{
+import model.math.TransformMatrix;
+import model.objects.Camera;
+
+public class PerspectiveCamera extends Camera {
 
   float fieldOfView;
   float aspectRatio;

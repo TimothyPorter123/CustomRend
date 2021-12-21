@@ -1,7 +1,7 @@
 package view;
 
-import model.Vector2;
-import model.Vector3;
+import model.math.Vector2;
+import model.math.Vector3;
 
 public class VertexData {
   Vector3 objectPos;

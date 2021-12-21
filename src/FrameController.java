@@ -1,27 +1,22 @@
 import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 
 import javax.swing.*;
 
-import model.Camera;
-import model.PerspectiveCamera;
-import model.RenderOutput;
-import model.SimpleTriangle;
-import model.TransformMatrix;
-import model.Vector3;
-import view.LineRenderer;
-import view.LineShader;
-import view.Shader;
-import view.ShaderApplicator;
+import model.Scene3D;
+import view.UserModelWindow;
+import model.objects.Camera;
+import model.objects.PerspectiveCamera;
+import model.objects.SimpleModel;
+import model.objects.SimpleTriangle;
+import model.math.TransformMatrix;
+import model.math.Vector3;
 import view.SimpleShader;
-import model.SimpleSquare;
+import model.objects.SimpleSquare;
 
 public class FrameController {
 
-  Shader standardShader;
   SimpleSquare squareModel;
   SimpleSquare secondSquare;
   SimpleTriangle triangle;
@@ -29,15 +24,12 @@ public class FrameController {
   TransformMatrix reverseRotate;
   TransformMatrix simpleMove;
 
-  Camera mainCam;
-
-  int imageWidth = 400;
-  int imageHeight = 400;
+  int imageWidth = 800;
+  int imageHeight = 600;
   JTextField infoField;
   JFrame mainFrame;
   JPanel renderPanel;
 
-  RenderOutput MRRFrame;
   long lastFrameMilli = 0;
 
   public FrameController () {
@@ -50,13 +42,13 @@ public class FrameController {
     infoPanel.setPreferredSize(new Dimension(imageWidth, 50));
     infoField = new JTextField("default text");
     infoPanel.add(infoField);
-    renderPanel.addMouseListener(new MouseAdapter() {
+    /*renderPanel.addMouseListener(new MouseAdapter() {
       @Override
       public void mouseClicked(MouseEvent e) {
         mainCam.transform(new TransformMatrix().rotate(new Vector3(5, 0, 0)));
         mainFrame.repaint();
       }
-    });
+    });*/
     mainFrame.setLayout(new BoxLayout(mainFrame.getContentPane(), BoxLayout.PAGE_AXIS));
     mainFrame.add(renderPanel);
     mainFrame.add(infoPanel);
@@ -67,7 +59,6 @@ public class FrameController {
   }
 
   private void setClassDefaults() {
-    standardShader = new SimpleShader(Color.blue);
     squareModel = new SimpleSquare();
     secondSquare = new SimpleSquare();
     triangle = new SimpleTriangle();
@@ -75,30 +66,33 @@ public class FrameController {
     simpleRotate = new TransformMatrix().rotate(new Vector3(1.0f, 1.0f, 0.0f));
     reverseRotate = new TransformMatrix().rotate(new Vector3(-1.0f, -1.0f, 0.0f));
     simpleMove = new TransformMatrix().move(new Vector3(0.0f, 0.1f, 0.0f));
-
-    //near clipping plane CANNOT be 0
-    mainCam = new PerspectiveCamera(90, 0.1f, 1000f, (float)imageHeight / imageWidth);
-    mainCam.transform(new TransformMatrix().move(new Vector3(0, 3.0f, 3.0f)));
-    mainCam.transform(new TransformMatrix().rotate(new Vector3(45, 180, 0)));
   }
 
 
   public static void main(String[] args) {
     FrameController frame = new FrameController();
+    UserModelWindow.UserWindowBuilder mainWindowBuilder = new UserModelWindow.UserWindowBuilder();
+
+    //CLIPPING PLANE =/= 0
+    Camera mainCam = new PerspectiveCamera(90, 0.1f, 1000f, (float)frame.imageHeight / frame.imageWidth);
+    mainCam.transform(new TransformMatrix().move(new Vector3(0, 3.0f, 3.0f)));
+    mainCam.transform(new TransformMatrix().rotate(new Vector3(45, 180, 0)));
+
+    mainWindowBuilder.addShader(new SimpleShader(Color.blue));
+    mainWindowBuilder.setCamera(mainCam);
+    mainWindowBuilder.setDimension(frame.imageWidth, frame.imageHeight);
+    mainWindowBuilder.setScene(new Scene3D.SceneBuilder().addObject(frame.squareModel).addObject(frame.secondSquare).build());
+    UserModelWindow mainWindow = mainWindowBuilder.build();
+
     while(true) {
-      frame.UpdateFrame();
+      frame.squareModel.transform(frame.simpleRotate);
+      frame.secondSquare.transform(frame.reverseRotate);
+      mainWindow.render();
+      frame.UpdateFrame(mainWindow);
     }
   }
 
-  public void UpdateFrame() {
-    ShaderApplicator applicator = new ShaderApplicator(standardShader, imageWidth, imageHeight);
-    RenderOutput firstObject = applicator.renderObject(squareModel, mainCam);
-    RenderOutput secondObject = applicator.renderObjectOver(secondSquare, mainCam, firstObject.image, firstObject.depthBuffer);
-    RenderOutput withLines = drawObjectGrid(secondObject);
-
-    squareModel.transform(simpleRotate);
-    secondSquare.transform(reverseRotate);
-    MRRFrame = withLines;
+  public void UpdateFrame(UserModelWindow mainWindow) {
     infoField.setText("FPS: " + (1000 / (System.currentTimeMillis() - lastFrameMilli)));
     lastFrameMilli = System.currentTimeMillis();
 
@@ -108,28 +102,11 @@ public class FrameController {
     AffineTransform at = AffineTransform.getScaleInstance(1, -1);
     at.translate(0, -imageHeight);
     g2.transform(at);
-    g2.drawImage(MRRFrame.image, 0, 0, null);
+    g2.drawImage(mainWindow.fetchMostRecent().image, 0, 0, null);
 
     renderPanel.removeAll();
     renderPanel.add(new JLabel(new ImageIcon(output)));
     mainFrame.revalidate();
     mainFrame.repaint();
-  }
-
-  private RenderOutput drawObjectGrid(RenderOutput in) {
-    LineShader lineShader = new LineShader(Color.blue);
-    LineRenderer lineRenderer = new LineRenderer(lineShader, imageWidth, imageHeight);
-    RenderOutput withLine = in;
-    for(int x = -2; x < 3; x++) {
-      lineShader.setColor(x == 0 ? Color.blue : Color.white);
-      withLine = lineRenderer.renderLineOver(new Vector3(x, 0, 2f), new Vector3(x, 0, -2f),
-              0, mainCam, withLine.image, withLine.depthBuffer);
-    }
-    for(int z = -2; z < 3; z++) {
-      lineShader.setColor(z == 0 ? Color.red : Color.white);
-      withLine = lineRenderer.renderLineOver(new Vector3(2f, 0, z), new Vector3(-2f, 0, z),
-              0, mainCam, withLine.image, withLine.depthBuffer);
-    }
-    return withLine;
   }
 }

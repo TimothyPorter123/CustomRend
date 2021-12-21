@@ -2,8 +2,8 @@ package view;
 
 import java.awt.*;
 
-import model.TransformMatrix;
-import model.Vector3;
+import model.math.TransformMatrix;
+import model.math.Vector3;
 
 public class SimpleShader implements Shader {
 

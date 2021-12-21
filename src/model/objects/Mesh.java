@@ -1,4 +1,6 @@
-package model;
+package model.objects;
+
+import model.math.Vector3;
 
 public class Mesh {
   public Vector3[] verts;

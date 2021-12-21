@@ -2,11 +2,11 @@ package view;
 
 import java.awt.image.BufferedImage;
 
-import model.Camera;
+import model.objects.Camera;
 import model.RenderOutput;
-import model.TransformMatrix;
-import model.Vector2;
-import model.Vector3;
+import model.math.TransformMatrix;
+import model.math.Vector2;
+import model.math.Vector3;
 
 public class LineRenderer {
 
@@ -117,7 +117,7 @@ public class LineRenderer {
         pixelStart = new Vector2((int)(vert2v2f.clipPos.x * screenWidth), (int)(vert2v2f.clipPos.y * screenHeight));
         pixelEnd = new Vector2((int)(vert1v2f.clipPos.x * screenWidth), (int)(vert1v2f.clipPos.y * screenHeight));
       }
-      float yIncrement = (vert1v2f.clipPos.y - vert2v2f.clipPos.y) / (vert1v2f.clipPos.x - vert2v2f.clipPos.x);
+      float yIncrement = (pixelStart.y - pixelEnd.y) / (pixelStart.x - pixelEnd.x);
 
       for(int x = (int)pixelStart.x; x < pixelEnd.x + 1; x++) {
         int y = Math.round(pixelStart.y + (x - pixelStart.x) * yIncrement);
@@ -139,7 +139,7 @@ public class LineRenderer {
         pixelEnd = new Vector2((int)(vert1v2f.clipPos.x * screenWidth), (int)(vert1v2f.clipPos.y * screenHeight));
       }
 
-      float xIncrement = (vert1v2f.clipPos.x - vert2v2f.clipPos.x) / (vert1v2f.clipPos.y - vert2v2f.clipPos.y);
+      float xIncrement = (pixelStart.x - pixelEnd.x) / (pixelStart.y - pixelEnd.y);
 
       for(int y = (int)pixelStart.y; y < pixelEnd.y + 1; y++) {
         int x = Math.round(pixelStart.x + (y - pixelStart.y) * xIncrement);

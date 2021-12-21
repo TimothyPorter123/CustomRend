@@ -2,7 +2,7 @@ package view;
 
 import java.awt.*;
 
-import model.TransformMatrix;
+import model.math.TransformMatrix;
 
 public interface Shader {
 

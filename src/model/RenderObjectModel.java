@@ -1,5 +1,8 @@
 package model;
 
+import model.math.TransformMatrix;
+import model.math.Vector3;
+
 public interface RenderObjectModel {
 
   public void setVertices(Vector3[] vertices);
@@ -10,5 +13,5 @@ public interface RenderObjectModel {
 
   public int[] getTriangles();
 
-  public void transform(TransformMatrix transformation);
+  public TransformMatrix getTransform();
 }

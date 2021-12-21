@@ -1,4 +1,6 @@
-package model;
+package model.math;
+
+import model.Matrix;
 
 public class TransformMatrix extends Matrix {
 

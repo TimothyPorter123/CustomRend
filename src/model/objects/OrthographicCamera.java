@@ -1,4 +1,7 @@
-package model;
+package model.objects;
+
+import model.math.TransformMatrix;
+import model.objects.Camera;
 
 public class OrthographicCamera extends Camera {
 

@@ -1,4 +1,4 @@
-package model;
+package model.math;
 
 public class Vector3 {
 

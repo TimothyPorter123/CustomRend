@@ -1,4 +1,6 @@
-package model;
+package model.objects;
+
+import model.math.TransformMatrix;
 
 public abstract class Camera extends WorldObject {
 

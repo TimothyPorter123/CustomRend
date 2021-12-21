@@ -2,18 +2,17 @@ package view;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.util.Arrays;
 import java.util.List;
 import java.util.ArrayList;
 
-import model.Camera;
-import model.Mesh;
 import model.RenderObjectModel;
+import model.objects.Camera;
+import model.objects.Mesh;
 import model.RenderOutput;
-import model.SimpleModel;
-import model.TransformMatrix;
-import model.Vector2;
-import model.Vector3;
+import model.objects.SimpleModel;
+import model.math.TransformMatrix;
+import model.math.Vector2;
+import model.math.Vector3;
 
 public class ShaderApplicator {
 
@@ -28,11 +27,11 @@ public class ShaderApplicator {
   }
 
 
-  public RenderOutput renderObject(SimpleModel model, Camera camera) {
+  public RenderOutput renderObject(RenderObjectModel model, Camera camera) {
     return renderObjectOver(model, camera, blankScreenImage(), blankDepthBuffer());
   }
 
-  public RenderOutput renderObjectOver(SimpleModel model, Camera camera, BufferedImage base, BufferedImage buffer) {
+  public RenderOutput renderObjectOver(RenderObjectModel model, Camera camera, BufferedImage base, BufferedImage buffer) {
     TransformMatrix M = model.getTransform();
     TransformMatrix V = camera.getTransform().inverse();
     TransformMatrix P = camera.getProjectionMatrix();

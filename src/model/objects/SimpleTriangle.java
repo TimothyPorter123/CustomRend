@@ -1,4 +1,6 @@
-package model;
+package model.objects;
+
+import model.math.Vector3;
 
 public class SimpleTriangle extends SimpleModel {
 

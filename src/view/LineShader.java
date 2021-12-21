@@ -2,7 +2,7 @@ package view;
 
 import java.awt.Color;
 
-import model.TransformMatrix;
+import model.math.TransformMatrix;
 
 public class LineShader implements Shader {
 

@@ -4,6 +4,7 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Vector;
 
 import model.RenderObjectModel;
 import model.objects.Camera;
@@ -13,6 +14,7 @@ import model.objects.SimpleModel;
 import model.math.TransformMatrix;
 import model.math.Vector2;
 import model.math.Vector3;
+import model.objects.Vertex;
 
 public class ShaderApplicator {
 
@@ -40,7 +42,7 @@ public class ShaderApplicator {
     shader.setProjectionMatrix(P);
     //this.preformAllCulling(verts, vertsToRender, M, V, P);
 
-    Mesh toRender = new Mesh(model.getVertices(), model.getTriangles());
+    Mesh toRender = model.getRenderableMesh();
 
     Vector3 viewPlanePosition = camera.getTransform().apply(new Vector3(0, 0, 0));
     Vector3 viewPlaneNormal = camera.getTransform().apply(new Vector3(0, 0, 1)).minus(viewPlanePosition).normalized();
@@ -49,20 +51,16 @@ public class ShaderApplicator {
     TransformMatrix IM = M.inverse();
     Mesh clippedMesh = clipMeshAgainstPlane(toRender, IM.apply(viewPlanePosition), IM.apply(viewPlaneNormal));
 
-    Vector3[] verts = clippedMesh.verts;
+    Vertex[] verts = clippedMesh.verts;
     int[] vertsToRender = clippedMesh.tris;
     VertexToFragment[] vertToFragData = new VertexToFragment[vertsToRender.length];
 
     for (int i = 0; i < vertsToRender.length; i += 3) {
-      Vector3 normal = Vector3.cross(verts[vertsToRender[i + 2]].minus(verts[vertsToRender[i]]),
-              verts[vertsToRender[i + 1]].minus(verts[vertsToRender[i]])).normalized();
-
-
       for (int v = i; v < i + 3; v++) {
         VertexData data = new VertexData();
-        data.objectPos = verts[vertsToRender[v]];
-        data.texCoord = new Vector2(verts[vertsToRender[v]].x, verts[vertsToRender[v]].z);
-        data.normal = normal;
+        data.objectPos = verts[vertsToRender[v]].position;
+        data.texCoord = verts[vertsToRender[v]].texCoord;
+        data.normal = verts[vertsToRender[v]].normal;
         vertToFragData[v] = shader.vert(data);
       }
     }
@@ -212,25 +210,25 @@ public class ShaderApplicator {
   }
 
   static Mesh clipMeshAgainstPlane(Mesh mesh, Vector3 pos, Vector3 normal) {
-    Vector3[] verts = mesh.verts;
+    Vertex[] verts = mesh.verts;
     int[] tris = mesh.tris;
     List<Integer> modTris = new ArrayList<Integer>();
-    List<Vector3> modVerts = new ArrayList<Vector3>();
-    for(Vector3 v : verts) {
+    List<Vertex> modVerts = new ArrayList<Vertex>();
+    for(Vertex v : verts) {
       modVerts.add(v);
     }
 
     //do clipping on each triangle
     for(int i = 0; i < tris.length; i += 3) {
       int clippedVerts = 0;
-      Vector3 v0 = verts[tris[i]];
-      float dis0 = Vector3.dot(normal, v0.minus(pos));
+      Vertex v0 = verts[tris[i]];
+      float dis0 = Vector3.dot(normal, v0.position.minus(pos));
       clippedVerts += dis0 < 0 ? 1 : 0;
-      Vector3 v1 = verts[tris[i + 1]];
-      float dis1 = Vector3.dot(normal, v1.minus(pos));
+      Vertex v1 = verts[tris[i + 1]];
+      float dis1 = Vector3.dot(normal, v1.position.minus(pos));
       clippedVerts += dis1 < 0 ? 1 : 0;
-      Vector3 v2 = verts[tris[i + 2]];
-      float dis2 = Vector3.dot(normal, v2.minus(pos));
+      Vertex v2 = verts[tris[i + 2]];
+      float dis2 = Vector3.dot(normal, v2.position.minus(pos));
       clippedVerts += dis2 < 0 ? 1 : 0;
 
       switch (clippedVerts) {
@@ -241,20 +239,32 @@ public class ShaderApplicator {
           int newVertsIndex = modVerts.size();
           if(dis0 < 0) {
             //System.out.println("test1");
-            modVerts.add(Vector3.lerp(v0, v2, -dis0 / (dis2 - dis0)));
-            modVerts.add(Vector3.lerp(v0, v1, -dis0 / (dis1 - dis0)));
+            float factor1 = -dis0 / (dis2 - dis0);
+            modVerts.add(Vertex.lerp(v0, v2, factor1));
+
+            float factor2 = -dis0 / (dis1 - dis0);
+            modVerts.add(Vertex.lerp(v0, v1, factor2));
+
             modTris.add(newVertsIndex); modTris.add(newVertsIndex + 1); modTris.add(tris[i + 1]);
             modTris.add(newVertsIndex); modTris.add(tris[i + 1]); modTris.add(tris[i + 2]);
           } else if (dis1 < 0) {
             //System.out.println("test2");
-            modVerts.add(Vector3.lerp(v1, v0, -dis1 / (dis0 - dis1)));
-            modVerts.add(Vector3.lerp(v1, v2, -dis1 / (dis2 - dis1)));
+            float factor1 = -dis1 / (dis0 - dis1);
+            modVerts.add(Vertex.lerp(v1, v0, factor1));
+
+            float factor2 = -dis1 / (dis2 - dis1);
+            modVerts.add(Vertex.lerp(v1, v2, factor2));
+
             modTris.add(tris[i]); modTris.add(newVertsIndex); modTris.add(newVertsIndex + 1);
             modTris.add(tris[i]); modTris.add(newVertsIndex + 1); modTris.add(tris[i + 2]);
           } else {
             //System.out.println("test3");
-            modVerts.add(Vector3.lerp(v2, v0, -dis2 / (dis0 - dis2)));
-            modVerts.add(Vector3.lerp(v2, v1, -dis2 / (dis1 - dis2)));
+            float factor1 = -dis2 / (dis0 - dis2);
+            modVerts.add(Vertex.lerp(v2, v0, factor1));
+
+            float factor2 = -dis2 / (dis1 - dis2);
+            modVerts.add(Vertex.lerp(v2, v1, factor2));
+
             modTris.add(tris[i]); modTris.add(tris[i + 1]); modTris.add(newVertsIndex + 1);
             modTris.add(tris[i]); modTris.add(newVertsIndex + 1); modTris.add(newVertsIndex);
           }
@@ -263,18 +273,30 @@ public class ShaderApplicator {
           newVertsIndex = modVerts.size();
           if(dis0 >= 0) {
             //System.out.println("test4");
-            modVerts.add(Vector3.lerp(v2, v0, -dis2 / (dis0 - dis2)));
-            modVerts.add(Vector3.lerp(v1, v0, -dis1 / (dis0 - dis1)));
+            float factor1 = -dis2 / (dis0 - dis2);
+            modVerts.add(Vertex.lerp(v2, v0, factor1));
+
+            float factor2 = -dis1 / (dis0 - dis1);
+            modVerts.add(Vertex.lerp(v1, v0, factor2));
+
             modTris.add(tris[i]); modTris.add(newVertsIndex + 1); modTris.add(newVertsIndex);
           } else if (dis1 >= 0) {
             //System.out.println("test5");
-            modVerts.add(Vector3.lerp(v0, v1, -dis0 / (dis1 - dis0)));
-            modVerts.add(Vector3.lerp(v2, v1, -dis2 / (dis1 - dis2)));
+            float factor1 = -dis0 / (dis1 - dis0);
+            modVerts.add(Vertex.lerp(v0, v1, factor1));
+
+            float factor2 = -dis2 / (dis1 - dis2);
+            modVerts.add(Vertex.lerp(v2, v1, factor2));
+
             modTris.add(newVertsIndex); modTris.add(tris[i + 1]); modTris.add(newVertsIndex + 1);
           } else {
             //System.out.println("test6");
-            modVerts.add(Vector3.lerp(v0, v2, -dis0 / (dis2 - dis0)));
-            modVerts.add(Vector3.lerp(v1, v2, -dis1 / (dis2 - dis1)));
+            float factor1 = -dis0 / (dis2 - dis0);
+            modVerts.add(Vertex.lerp(v0, v2, factor1));
+
+            float factor2 = -dis1 / (dis2 - dis1);
+            modVerts.add(Vertex.lerp(v1, v2, factor2));
+
             modTris.add(newVertsIndex); modTris.add(newVertsIndex + 1); modTris.add(tris[i + 2]);
           }
           break;
@@ -294,7 +316,7 @@ public class ShaderApplicator {
       }
     }*/
     //convert lists to arrays because apparently java doesn't have a way to do this which isn't awful
-    Vector3[] newVerts = new Vector3[modVerts.size()];
+    Vertex[] newVerts = new Vertex[modVerts.size()];
     for(int v = 0; v < modVerts.size(); v++) { newVerts[v] = modVerts.get(v); }
     int[] newTris = new int[modTris.size()];
     for(int i = 0; i < modTris.size(); i++) { newTris[i] = modTris.get(i); }

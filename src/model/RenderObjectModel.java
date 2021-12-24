@@ -2,16 +2,24 @@ package model;
 
 import model.math.TransformMatrix;
 import model.math.Vector3;
+import model.objects.Mesh;
+import model.objects.Vertex;
 
 public interface RenderObjectModel {
 
-  public void setVertices(Vector3[] vertices);
+  public void setVertices(Vertex[] vertices);
 
-  public void setTriangles(int[] triangles) throws IllegalArgumentException;
+  public void setEdges(int[] edges);
 
-  public Vector3[] getVertices();
+  public void setFaces(int[][] faces);
 
-  public int[] getTriangles();
+  public Mesh getRenderableMesh();
+
+  public Vertex[] getVertices();
+
+  public int[] getEdges();
+
+  public int[][] getFaces();
 
   public TransformMatrix getTransform();
 }

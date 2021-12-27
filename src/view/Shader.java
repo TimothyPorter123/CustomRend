@@ -6,13 +6,7 @@ import model.math.TransformMatrix;
 
 public interface Shader {
 
-  public VertexToFragment vert(VertexData v);
+  public VertexToFragment vert(VertexData v, ShaderData s);
 
-  public Color frag(VertexToFragment o);
-
-  public void setModelMatrix(TransformMatrix modelMatrix);
-
-  public void setViewMatrix(TransformMatrix viewMatrix);
-
-  public void setProjectionMatrix(TransformMatrix projectionMatrix);
+  public Color frag(VertexToFragment o, ShaderData s);
 }

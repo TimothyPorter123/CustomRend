@@ -1,9 +1,6 @@
 package view;
 
 import java.awt.Color;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 import model.RenderObjectModel;
 import model.Scene3D;
@@ -54,10 +51,10 @@ public class UserModelWindow {
   }
 
   public void render() {
-    ShaderApplicator applicator = new ShaderApplicator(defaultShader, windowWidth, windowHeight);
-    RenderOutput objects = applicator.renderObject(SimpleModel.empty(), viewerCamera);
+    //SurfaceRenderer applicator = new SurfaceRenderer(defaultShader, windowWidth, windowHeight);
+    RenderOutput objects = RenderOutput.blank(windowWidth, windowHeight);
     for(RenderObjectModel o : scene.getVisibleObjects()) {
-      objects = applicator.renderObjectOver(o, viewerCamera, objects.image, objects.depthBuffer);
+      objects = viewerCamera.renderObjectSurfaceOver(o, defaultShader, objects);
     }
 
     RenderOutput withLines = drawObjectGrid(objects);
@@ -67,17 +64,17 @@ public class UserModelWindow {
 
   private RenderOutput drawObjectGrid(RenderOutput in) {
     LineShader lineShader = new LineShader(Color.blue);
-    LineRenderer lineRenderer = new LineRenderer(lineShader, windowWidth, windowHeight);
+    //LineRenderer lineRenderer = new LineRenderer(lineShader, windowWidth, windowHeight);
     RenderOutput withLine = in;
     for(int x = -2; x < 3; x++) {
       lineShader.setColor(x == 0 ? Color.blue : Color.white);
-      withLine = lineRenderer.renderLineOver(new Vector3(x, 0, 2f), new Vector3(x, 0, -2f),
-              0, viewerCamera, withLine.image, withLine.depthBuffer);
+      withLine = viewerCamera.renderLineOver(new Vector3(x, 0, 2f), new Vector3(x, 0, -2f),
+              lineShader, withLine);
     }
     for(int z = -2; z < 3; z++) {
       lineShader.setColor(z == 0 ? Color.red : Color.white);
-      withLine = lineRenderer.renderLineOver(new Vector3(2f, 0, z), new Vector3(-2f, 0, z),
-              0, viewerCamera, withLine.image, withLine.depthBuffer);
+      withLine = viewerCamera.renderLineOver(new Vector3(2f, 0, z), new Vector3(-2f, 0, z),
+              lineShader, withLine);
     }
     return withLine;
   }

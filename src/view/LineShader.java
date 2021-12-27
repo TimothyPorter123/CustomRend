@@ -7,8 +7,6 @@ import model.math.TransformMatrix;
 public class LineShader implements Shader {
 
   Color color;
-  TransformMatrix viewMatrix;
-  TransformMatrix projectionMatrix;
 
   public LineShader(Color color) {
     this.color = color;
@@ -20,28 +18,16 @@ public class LineShader implements Shader {
 
 
   @Override
-  public VertexToFragment vert(VertexData v) {
+  public VertexToFragment vert(VertexData v, ShaderData s) {
     VertexToFragment returnFrag = new VertexToFragment();
     returnFrag.uv = v.texCoord;
     returnFrag.normal = v.normal;
-    returnFrag.clipPos = ShaderApplicator.worldToClipPos(v.objectPos, this.viewMatrix, this.projectionMatrix);
+    returnFrag.clipPos = s.worldToClipPos(v.objectPos);
     return returnFrag;
   }
 
   @Override
-  public Color frag(VertexToFragment o) {
+  public Color frag(VertexToFragment o, ShaderData s) {
     return color;
   }
-
-  @Override
-  public void setModelMatrix(TransformMatrix modelMatrix) {  }
-
-
-  @Override
-  public void setViewMatrix(TransformMatrix viewMatrix) {
-    this.viewMatrix = viewMatrix;
-  }
-
-  @Override
-  public void setProjectionMatrix(TransformMatrix projectionMatrix) { this.projectionMatrix = projectionMatrix; }
 }

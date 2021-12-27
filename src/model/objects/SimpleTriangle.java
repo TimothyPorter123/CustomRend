@@ -10,12 +10,13 @@ public class SimpleTriangle extends SimpleModel {
 
   @Override
   protected void construct() {
-    Vertex top = new Vertex(0, 3, 0);
-    Vertex left = new Vertex(1, 0, 1);
-    Vertex right = new Vertex(-1, 0, -1);
-    this.setVertices(new Vertex[]{ top, left, right });
+    Vector3 top = new Vector3(0, 3, 0);
+    Vector3 left = new Vector3(1, 0, 1);
+    Vector3 right = new Vector3(-1, 0, -1);
+    this.setVertices(new Vector3[]{ top, left, right });
     int[][] faces = new int[1][2];
     faces[0] = new int[] { 0, 1, 2 };
     this.setFaces(faces);
+    this.generateUVs();
   }
 }

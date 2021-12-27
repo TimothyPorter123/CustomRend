@@ -96,6 +96,7 @@ public class ShaderApplicator {
     return new RenderOutput(base, buffer);
   }
 
+  //depricated and not in use
   private void preformAllCulling(Vector3[] verts, int[] tris, TransformMatrix M, TransformMatrix V, TransformMatrix P) {
     boolean[] vertexInFrustum = new boolean[verts.length];
     boolean[] needsClipping = new boolean[tris.length / 3];
@@ -220,101 +221,83 @@ public class ShaderApplicator {
 
     //do clipping on each triangle
     for(int i = 0; i < tris.length; i += 3) {
-      int clippedVerts = 0;
       Vertex v0 = verts[tris[i]];
       float dis0 = Vector3.dot(normal, v0.position.minus(pos));
-      clippedVerts += dis0 < 0 ? 1 : 0;
       Vertex v1 = verts[tris[i + 1]];
       float dis1 = Vector3.dot(normal, v1.position.minus(pos));
-      clippedVerts += dis1 < 0 ? 1 : 0;
       Vertex v2 = verts[tris[i + 2]];
       float dis2 = Vector3.dot(normal, v2.position.minus(pos));
-      clippedVerts += dis2 < 0 ? 1 : 0;
 
-      switch (clippedVerts) {
-        case 0:
+      int sig0 = Float.floatToIntBits(dis0)>>>31;
+      int sig1 = Float.floatToIntBits(dis1)>>>31;
+      int sig2 = Float.floatToIntBits(dis2)>>>31;
+      dis0 = Math.abs(dis0);
+      dis1 = Math.abs(dis1);
+      dis2 = Math.abs(dis2);
+
+      if(sig0 == sig1 && sig1 == sig2) {
+        if(sig0 == 0) {
           modTris.add(tris[i]); modTris.add(tris[i + 1]); modTris.add(tris[i + 2]);
-          break;
-        case 1:
-          int newVertsIndex = modVerts.size();
-          if(dis0 < 0) {
-            //System.out.println("test1");
-            float factor1 = -dis0 / (dis2 - dis0);
-            modVerts.add(Vertex.lerp(v0, v2, factor1));
+        }
+      } else {
+        int newVertsIndex = modVerts.size();
+        int standOutSig = 0;
+        int standOutIndex = 0;
+        int nextVertIndex = 0;
+        int lastVertIndex = 0;
 
-            float factor2 = -dis0 / (dis1 - dis0);
-            modVerts.add(Vertex.lerp(v0, v1, factor2));
+        if (sig0 == sig1) {
+          standOutSig = sig2;
+          standOutIndex = tris[i + 2];
+          nextVertIndex = tris[i];
+          lastVertIndex = tris[i + 1];
 
-            modTris.add(newVertsIndex); modTris.add(newVertsIndex + 1); modTris.add(tris[i + 1]);
-            modTris.add(newVertsIndex); modTris.add(tris[i + 1]); modTris.add(tris[i + 2]);
-          } else if (dis1 < 0) {
-            //System.out.println("test2");
-            float factor1 = -dis1 / (dis0 - dis1);
-            modVerts.add(Vertex.lerp(v1, v0, factor1));
+          modVerts.add(newVertsIndex, Vertex.lerp(v2, v0, dis2 / (dis0 + dis2)));
+          modVerts.add(newVertsIndex + 1, Vertex.lerp(v2, v1, dis2 / (dis1 + dis2)));
+        } else if (sig0 == sig2) {
+          standOutSig = sig1;
+          standOutIndex = tris[i + 1];
+          nextVertIndex = tris[i + 2];
+          lastVertIndex = tris[i];
 
-            float factor2 = -dis1 / (dis2 - dis1);
-            modVerts.add(Vertex.lerp(v1, v2, factor2));
+          modVerts.add(newVertsIndex, Vertex.lerp(v1, v2, dis1 / (dis2 + dis1)));
+          modVerts.add(newVertsIndex + 1, Vertex.lerp(v1, v0, dis1 / (dis0 + dis1)));
+        } else {
+          standOutSig = sig0;
+          standOutIndex = tris[i];
+          nextVertIndex = tris[i + 1];
+          lastVertIndex = tris[i + 2];
 
-            modTris.add(tris[i]); modTris.add(newVertsIndex); modTris.add(newVertsIndex + 1);
-            modTris.add(tris[i]); modTris.add(newVertsIndex + 1); modTris.add(tris[i + 2]);
-          } else {
-            //System.out.println("test3");
-            float factor1 = -dis2 / (dis0 - dis2);
-            modVerts.add(Vertex.lerp(v2, v0, factor1));
+          modVerts.add(newVertsIndex, Vertex.lerp(v0, v1, dis0 / (dis1 + dis0)));
+          modVerts.add(newVertsIndex + 1, Vertex.lerp(v0, v2, dis0 / (dis2 + dis0)));
+        }
 
-            float factor2 = -dis2 / (dis1 - dis2);
-            modVerts.add(Vertex.lerp(v2, v1, factor2));
-
-            modTris.add(tris[i]); modTris.add(tris[i + 1]); modTris.add(newVertsIndex + 1);
-            modTris.add(tris[i]); modTris.add(newVertsIndex + 1); modTris.add(newVertsIndex);
-          }
-          break;
-        case 2:
-          newVertsIndex = modVerts.size();
-          if(dis0 >= 0) {
-            //System.out.println("test4");
-            float factor1 = -dis2 / (dis0 - dis2);
-            modVerts.add(Vertex.lerp(v2, v0, factor1));
-
-            float factor2 = -dis1 / (dis0 - dis1);
-            modVerts.add(Vertex.lerp(v1, v0, factor2));
-
-            modTris.add(tris[i]); modTris.add(newVertsIndex + 1); modTris.add(newVertsIndex);
-          } else if (dis1 >= 0) {
-            //System.out.println("test5");
-            float factor1 = -dis0 / (dis1 - dis0);
-            modVerts.add(Vertex.lerp(v0, v1, factor1));
-
-            float factor2 = -dis2 / (dis1 - dis2);
-            modVerts.add(Vertex.lerp(v2, v1, factor2));
-
-            modTris.add(newVertsIndex); modTris.add(tris[i + 1]); modTris.add(newVertsIndex + 1);
-          } else {
-            //System.out.println("test6");
-            float factor1 = -dis0 / (dis2 - dis0);
-            modVerts.add(Vertex.lerp(v0, v2, factor1));
-
-            float factor2 = -dis1 / (dis2 - dis1);
-            modVerts.add(Vertex.lerp(v1, v2, factor2));
-
-            modTris.add(newVertsIndex); modTris.add(newVertsIndex + 1); modTris.add(tris[i + 2]);
-          }
-          break;
-        default:
-          //System.out.println("test7");
-          break;
+        if (standOutSig == 0) {
+          modTris.add(standOutIndex);
+          modTris.add(newVertsIndex);
+          modTris.add(newVertsIndex + 1);
+        } else {
+          modTris.add(newVertsIndex + 1);
+          modTris.add(newVertsIndex);
+          modTris.add(nextVertIndex);
+          modTris.add(newVertsIndex + 1);
+          modTris.add(nextVertIndex);
+          modTris.add(lastVertIndex);
+        }
       }
     }
 
     //clear now unused verts from the array
-    /*for(int v = 0 ; v < modVerts.size(); v++) {
+    for(int v = 0 ; v < modVerts.size(); v++) {
       if(!modTris.contains(v)) {
         modVerts.remove(v);
         for(int i = 0; i < modTris.size(); i++) {
-          tris[i] = tris[i] > v ? tris[i] - 1 : tris[i];
+          modTris.set(i, modTris.get(i) > v ? modTris.get(i) - 1 : modTris.get(i));
         }
+        v--;
       }
-    }*/
+    }
+
     //convert lists to arrays because apparently java doesn't have a way to do this which isn't awful
     Vertex[] newVerts = new Vertex[modVerts.size()];
     for(int v = 0; v < modVerts.size(); v++) { newVerts[v] = modVerts.get(v); }

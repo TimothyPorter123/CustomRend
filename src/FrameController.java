@@ -1,14 +1,15 @@
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 
 import javax.swing.*;
 
-import model.Scene3D;
+import model.*;
 import view.UserModelWindow;
 import model.objects.Camera;
 import model.objects.PerspectiveCamera;
-import model.objects.SimpleModel;
 import model.objects.SimpleTriangle;
 import model.math.TransformMatrix;
 import model.math.Vector3;
@@ -30,6 +31,9 @@ public class FrameController {
   JFrame mainFrame;
   JPanel renderPanel;
 
+  //remove
+  Camera mainCam;
+
   long lastFrameMilli = 0;
 
   public FrameController () {
@@ -42,13 +46,13 @@ public class FrameController {
     infoPanel.setPreferredSize(new Dimension(imageWidth, 50));
     infoField = new JTextField("default text");
     infoPanel.add(infoField);
-    /*renderPanel.addMouseListener(new MouseAdapter() {
+    renderPanel.addMouseListener(new MouseAdapter() {
       @Override
       public void mouseClicked(MouseEvent e) {
         mainCam.transform(new TransformMatrix().rotate(new Vector3(5, 0, 0)));
         mainFrame.repaint();
       }
-    });*/
+    });
     mainFrame.setLayout(new BoxLayout(mainFrame.getContentPane(), BoxLayout.PAGE_AXIS));
     mainFrame.add(renderPanel);
     mainFrame.add(infoPanel);
@@ -74,12 +78,12 @@ public class FrameController {
     UserModelWindow.UserWindowBuilder mainWindowBuilder = new UserModelWindow.UserWindowBuilder();
 
     //CLIPPING PLANE =/= 0
-    Camera mainCam = new PerspectiveCamera(90, 0.1f, 1000f, (float)frame.imageHeight / frame.imageWidth);
-    mainCam.transform(new TransformMatrix().move(new Vector3(0, 3.0f, 3.0f)));
-    mainCam.transform(new TransformMatrix().rotate(new Vector3(45, 180, 0)));
+    frame.mainCam = new PerspectiveCamera(90, 0.1f, 1000f, (float)frame.imageHeight / frame.imageWidth);
+    frame.mainCam.transform(new TransformMatrix().move(new Vector3(0, 3.0f, 3.0f)));
+    frame.mainCam.transform(new TransformMatrix().rotate(new Vector3(45, 180, 0)));
 
     mainWindowBuilder.addShader(new SimpleShader(Color.blue));
-    mainWindowBuilder.setCamera(mainCam);
+    mainWindowBuilder.setCamera(frame.mainCam);
     mainWindowBuilder.setDimension(frame.imageWidth, frame.imageHeight);
     mainWindowBuilder.setScene(new Scene3D.SceneBuilder().addObject(frame.squareModel).addObject(frame.secondSquare).build());
     UserModelWindow mainWindow = mainWindowBuilder.build();

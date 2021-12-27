@@ -10,17 +10,17 @@ public final class SimpleSquare extends SimpleModel {
 
   @Override
   protected void construct() {
-    Vertex base = new Vertex(-0.5f, -0.5f, -0.5f);
-    Vertex base1 = new Vertex(0.5f, -0.5f, -0.5f);
-    Vertex base2 = new Vertex(0.5f, 0.5f, -0.5f);
-    Vertex base3 = new Vertex(-0.5f, 0.5f, -0.5f);
+    Vector3 base = new Vector3(-0.5f, -0.5f, -0.5f);
+    Vector3 base1 = new Vector3(0.5f, -0.5f, -0.5f);
+    Vector3 base2 = new Vector3(0.5f, 0.5f, -0.5f);
+    Vector3 base3 = new Vector3(-0.5f, 0.5f, -0.5f);
 
-    Vertex top = new Vertex(-0.5f, -0.5f, 0.5f);
-    Vertex top1 = new Vertex(0.5f, -0.5f, 0.5f);
-    Vertex top2 = new Vertex(0.5f, 0.5f, 0.5f);
-    Vertex top3 = new Vertex(-0.5f, 0.5f, 0.5f);
+    Vector3 top = new Vector3(-0.5f, -0.5f, 0.5f);
+    Vector3 top1 = new Vector3(0.5f, -0.5f, 0.5f);
+    Vector3 top2 = new Vector3(0.5f, 0.5f, 0.5f);
+    Vector3 top3 = new Vector3(-0.5f, 0.5f, 0.5f);
 
-    this.setVertices(new Vertex[] {base, base1, base2, base3, top, top1, top2, top3});
+    this.setVertices(new Vector3[] {base, base1, base2, base3, top, top1, top2, top3});
 
     int[][] faces = new int[6][4];
     faces[0] = new int[] { 0, 1, 5, 4};
@@ -30,6 +30,7 @@ public final class SimpleSquare extends SimpleModel {
     faces[4] = new int[] { 1, 2, 6, 5};
     faces[5] = new int[] { 0, 4, 7, 3};
     this.setFaces(faces);
+    this.generateUVs();
     /*int[] tris = new int[36];
 
     tris[0] = 0;

@@ -1,8 +1,11 @@
-package view;
+package view.shaders;
 
 import java.awt.*;
 
 import model.math.Vector3;
+import view.ShaderData;
+import view.VertexData;
+import view.VertexToFragment;
 
 public class SimpleShader implements Shader {
 

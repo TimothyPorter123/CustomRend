@@ -1,8 +1,10 @@
-package view;
+package view.shaders;
 
 import java.awt.Color;
 
-import model.math.TransformMatrix;
+import view.ShaderData;
+import view.VertexData;
+import view.VertexToFragment;
 
 public class LineShader implements Shader {
 

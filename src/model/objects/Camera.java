@@ -8,7 +8,7 @@ import model.math.TransformMatrix;
 import model.math.Vector2;
 import model.math.Vector3;
 import view.LineRendererMath;
-import view.Shader;
+import view.shaders.Shader;
 import view.ShaderData;
 import view.VertexData;
 import view.VertexToFragment;
@@ -150,41 +150,25 @@ public abstract class Camera extends WorldObject {
             || (vert1v2f.clipPos.x > 1 && vert2v2f.clipPos.x > 1)
             || (vert1v2f.clipPos.y < 0 && vert2v2f.clipPos.y < 0)
             || (vert1v2f.clipPos.y > 1 && vert2v2f.clipPos.y > 1)) {
-      return new RenderOutput(base, buffer);
+      return previous;
     }
 
+    //clip to screen
     Vector2 point1 = vert1v2f.clipPos.xy();
     Vector2 point2 = vert2v2f.clipPos.xy();
-    //clip to screen
-    if(vert1v2f.clipPos.x < 0) {
-      Vector2 point = Vector2.lerp(vert1v2f.clipPos.xy(), vert2v2f.clipPos.xy(), -vert1v2f.clipPos.x / (vert2v2f.clipPos.x - vert1v2f.clipPos.x));
-      point1 = point2.minus(point1).magnitude() > point2.minus(point).magnitude() ? point : point1;
-    } else if (vert1v2f.clipPos.x > 1) {
-      Vector2 point = Vector2.lerp(vert1v2f.clipPos.xy(), vert2v2f.clipPos.xy(), (vert1v2f.clipPos.x - 1) / (vert1v2f.clipPos.x - vert2v2f.clipPos.x));
-      point1 = point2.minus(point1).magnitude() > point2.minus(point).magnitude() ? point : point1;
+    for(int i = 0; i < 2; i++) {
+      if(point1.x < 0 || point1.x > 1) {
+        float factor = point1.x < 0 ? point1.x : point1.x - 1;
+        point1 = Vector2.lerp(point1, point2, factor / (point1.x - point2.x));
+      }
+      if(point1.y < 0 || point1.y > 1) {
+        float factor = point1.y < 0 ? point1.y : point1.y - 1;
+        point1 = Vector2.lerp(point1, point2, factor / (point1.y - point2.y));
+      }
+      Vector2 hold = point1;
+      point1 = point2;
+      point2 = hold;
     }
-    if(vert1v2f.clipPos.y < 0) {
-      Vector2 point = Vector2.lerp(vert1v2f.clipPos.xy(), vert2v2f.clipPos.xy(), -vert1v2f.clipPos.y / (vert2v2f.clipPos.y - vert1v2f.clipPos.y));
-      point1 = point2.minus(point1).magnitude() > point2.minus(point).magnitude() ? point : point1;
-    } else if (vert1v2f.clipPos.y > 1) {
-      Vector2 point = Vector2.lerp(vert1v2f.clipPos.xy(), vert2v2f.clipPos.xy(), (vert1v2f.clipPos.y - 1) / (vert1v2f.clipPos.y - vert2v2f.clipPos.y));
-      point1 = point2.minus(point1).magnitude() > point2.minus(point).magnitude() ? point : point1;
-    }
-    if(vert2v2f.clipPos.x < 0) {
-      Vector2 point = Vector2.lerp(vert2v2f.clipPos.xy(), vert1v2f.clipPos.xy(), -vert2v2f.clipPos.x / (vert1v2f.clipPos.x - vert2v2f.clipPos.x));
-      point2 = point1.minus(point2).magnitude() > point1.minus(point).magnitude() ? point : point2;
-    } else if (vert2v2f.clipPos.x > 1) {
-      Vector2 point = Vector2.lerp(vert2v2f.clipPos.xy(), vert1v2f.clipPos.xy(), (vert2v2f.clipPos.x - 1) / (vert2v2f.clipPos.x - vert1v2f.clipPos.x));
-      point2 = point1.minus(point2).magnitude() > point1.minus(point).magnitude() ? point : point2;
-    }
-    if(vert2v2f.clipPos.y < 0) {
-      Vector2 point = Vector2.lerp(vert2v2f.clipPos.xy(), vert1v2f.clipPos.xy(), -vert2v2f.clipPos.y / (vert1v2f.clipPos.y - vert2v2f.clipPos.y));
-      point2 = point1.minus(point2).magnitude() > point1.minus(point).magnitude() ? point : point2;
-    } else if (vert2v2f.clipPos.y > 1) {
-      Vector2 point = Vector2.lerp(vert2v2f.clipPos.xy(), vert1v2f.clipPos.xy(), (vert2v2f.clipPos.y - 1) / (vert2v2f.clipPos.y - vert1v2f.clipPos.y));
-      point2 = point1.minus(point2).magnitude() > point1.minus(point).magnitude() ? point : point2;
-    }
-
     vert1v2f  = LineRendererMath.onLineInterpolation(point1, vert1v2f, vert2v2f, sData);
     vert2v2f  = LineRendererMath.onLineInterpolation(point2, vert1v2f, vert2v2f, sData);
 
@@ -192,49 +176,42 @@ public abstract class Camera extends WorldObject {
     Vector2 pixelStart;
     Vector2 pixelEnd;
 
-    //X-centric or Y-centric change
-    if(Math.abs(vert1v2f.clipPos.x - vert2v2f.clipPos.x) > Math.abs(vert1v2f.clipPos.y - vert2v2f.clipPos.y)) {
-      //choose rightmost
-      if(vert1v2f.clipPos.x < vert2v2f.clipPos.x) {
-        pixelStart = new Vector2((int)(vert1v2f.clipPos.x * screenWidth), (int)(vert1v2f.clipPos.y * screenHeight));
-        pixelEnd = new Vector2((int)(vert2v2f.clipPos.x * screenWidth), (int)(vert2v2f.clipPos.y * screenHeight));
-      } else {
-        pixelStart = new Vector2((int)(vert2v2f.clipPos.x * screenWidth), (int)(vert2v2f.clipPos.y * screenHeight));
-        pixelEnd = new Vector2((int)(vert1v2f.clipPos.x * screenWidth), (int)(vert1v2f.clipPos.y * screenHeight));
-      }
-      float yIncrement = (pixelStart.y - pixelEnd.y) / (pixelStart.x - pixelEnd.x);
+    float xIncrement;
+    float yIncrement;
+    float incrementCount;
 
-      for(int x = (int)pixelStart.x; x < pixelEnd.x + 1; x++) {
-        int y = Math.round(pixelStart.y + (x - pixelStart.x) * yIncrement);
+    //X-centric or Y-centric change
+    boolean xCentric = Math.abs(vert1v2f.clipPos.x - vert2v2f.clipPos.x) > Math.abs(vert1v2f.clipPos.y - vert2v2f.clipPos.y);
+    //choose rightmost or higher point depending on change direction
+    if((xCentric && vert1v2f.clipPos.x < vert2v2f.clipPos.x)
+    || (!xCentric && vert1v2f.clipPos.y < vert2v2f.clipPos.y)) {
+      pixelStart = new Vector2((int)(vert1v2f.clipPos.x * screenWidth), (int)(vert1v2f.clipPos.y * screenHeight));
+      pixelEnd = new Vector2((int)(vert2v2f.clipPos.x * screenWidth), (int)(vert2v2f.clipPos.y * screenHeight));
+    } else {
+      pixelStart = new Vector2((int)(vert2v2f.clipPos.x * screenWidth), (int)(vert2v2f.clipPos.y * screenHeight));
+      pixelEnd = new Vector2((int)(vert1v2f.clipPos.x * screenWidth), (int)(vert1v2f.clipPos.y * screenHeight));
+    }
+
+    //set values for iteration over line
+    if(xCentric) {
+      incrementCount = pixelEnd.x - pixelStart.x;
+      xIncrement = 1;
+      yIncrement = (pixelStart.y - pixelEnd.y) / (pixelStart.x - pixelEnd.x);
+    } else {
+      incrementCount = pixelEnd.y - pixelStart.y;
+      xIncrement = (pixelStart.x - pixelEnd.x) / (pixelStart.y - pixelEnd.y);
+      yIncrement = 1;
+    }
+
+    for(int i = 0; i < incrementCount + 1; i++) {
+      int x = Math.round(pixelStart.x + i * xIncrement);
+      int y = Math.round(pixelStart.y + i * yIncrement);
+      if(x >= 0 && x < screenWidth && y >= 0 && y < screenHeight) {
         Vector2 point = new Vector2((float) x / screenWidth, (float) y / screenHeight);
         VertexToFragment v2f = LineRendererMath.onLineInterpolation(point, vert1v2f, vert2v2f, sData);
         if (v2f.clipPos.z < Float.intBitsToFloat(buffer.getRGB(x, y)) && v2f.clipPos.z > 0) {
           buffer.setRGB(x, y, Float.floatToIntBits(v2f.clipPos.z));
           base.setRGB(x, y, shader.frag(v2f, sData).getRGB());
-        }
-      }
-    }
-    else {
-      //choose higher
-      if(vert1v2f.clipPos.y < vert2v2f.clipPos.y) {
-        pixelStart = new Vector2((int)(vert1v2f.clipPos.x * screenWidth), (int)(vert1v2f.clipPos.y * screenHeight));
-        pixelEnd = new Vector2((int)(vert2v2f.clipPos.x * screenWidth), (int)(vert2v2f.clipPos.y * screenHeight));
-      } else {
-        pixelStart = new Vector2((int)(vert2v2f.clipPos.x * screenWidth), (int)(vert2v2f.clipPos.y * screenHeight));
-        pixelEnd = new Vector2((int)(vert1v2f.clipPos.x * screenWidth), (int)(vert1v2f.clipPos.y * screenHeight));
-      }
-
-      float xIncrement = (pixelStart.x - pixelEnd.x) / (pixelStart.y - pixelEnd.y);
-
-      for(int y = (int)pixelStart.y; y < pixelEnd.y + 1; y++) {
-        int x = Math.round(pixelStart.x + (y - pixelStart.y) * xIncrement);
-        if(x > 0 && x < screenWidth && y > 0 && y < screenHeight) {
-          Vector2 point = new Vector2((float) x / screenWidth, (float) y / screenHeight);
-          VertexToFragment v2f = LineRendererMath.onLineInterpolation(point, vert1v2f, vert2v2f, sData);
-          if (v2f.clipPos.z < Float.intBitsToFloat(buffer.getRGB(x, y)) && v2f.clipPos.z > 0) {
-            buffer.setRGB(x, y, Float.floatToIntBits(v2f.clipPos.z));
-            base.setRGB(x, y, shader.frag(v2f, sData).getRGB());
-          }
         }
       }
     }

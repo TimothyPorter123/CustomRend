@@ -6,8 +6,9 @@ import model.RenderObjectModel;
 import model.Scene3D;
 import model.objects.Camera;
 import model.RenderOutput;
-import model.objects.SimpleModel;
 import model.math.Vector3;
+import view.shaders.LineShader;
+import view.shaders.Shader;
 
 public class UserModelWindow {
 

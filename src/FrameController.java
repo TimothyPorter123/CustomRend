@@ -13,8 +13,9 @@ import model.objects.PerspectiveCamera;
 import model.objects.SimpleTriangle;
 import model.math.TransformMatrix;
 import model.math.Vector3;
-import view.SimpleShader;
+import view.shaders.SimpleShader;
 import model.objects.SimpleSquare;
+import view.shaders.TextureShader;
 
 public class FrameController {
 
@@ -82,7 +83,18 @@ public class FrameController {
     frame.mainCam.transform(new TransformMatrix().move(new Vector3(0, 3.0f, 3.0f)));
     frame.mainCam.transform(new TransformMatrix().rotate(new Vector3(45, 180, 0)));
 
-    mainWindowBuilder.addShader(new SimpleShader(Color.blue));
+    BufferedImage checkerTexture = new BufferedImage(9, 9, BufferedImage.TYPE_INT_ARGB);
+    for(int x = 0; x < 9; x++) {
+      for(int y = 0; y < 9; y++) {
+        if((x + y) % 2 == 0) {
+          checkerTexture.setRGB(x, y, Color.black.getRGB());
+        } else {
+          checkerTexture.setRGB(x, y, Color.white.getRGB());
+        }
+      }
+    }
+
+    mainWindowBuilder.addShader(new TextureShader(checkerTexture));
     mainWindowBuilder.setCamera(frame.mainCam);
     mainWindowBuilder.setDimension(frame.imageWidth, frame.imageHeight);
     mainWindowBuilder.setScene(new Scene3D.SceneBuilder().addObject(frame.squareModel).addObject(frame.secondSquare).build());

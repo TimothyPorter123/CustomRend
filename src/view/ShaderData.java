@@ -3,12 +3,12 @@ package view;
 import model.math.TransformMatrix;
 import model.math.Vector3;
 
-public class ShaderData {
-  TransformMatrix M;
-  TransformMatrix V;
-  TransformMatrix P;
-  int screenWidth;
-  int screenHeight;
+public final class ShaderData {
+  public final TransformMatrix M;
+  public final TransformMatrix V;
+  public final TransformMatrix P;
+  public final int screenWidth;
+  public final int screenHeight;
 
   public ShaderData(TransformMatrix M, TransformMatrix V, TransformMatrix P, int screenWidth, int screenHeight) {
     this.M = M;

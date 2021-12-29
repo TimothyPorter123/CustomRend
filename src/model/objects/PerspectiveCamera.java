@@ -22,6 +22,9 @@ public class PerspectiveCamera extends Camera {
   @Override
   public TransformMatrix getProjectionMatrix() { return this.projectionMatrix; };
 
+  @Override
+  protected boolean orthographic() { return false; }
+
   private TransformMatrix calculateProjectionMatrix() {
     TransformMatrix projection = new TransformMatrix();
     float sx = 1 / (float)Math.tan(this.fieldOfView * Math.PI / 360.0);

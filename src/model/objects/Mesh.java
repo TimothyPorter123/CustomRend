@@ -120,12 +120,23 @@ public class Mesh {
     this.clean();
   }
 
-  public void cullBackFaces(Vector3 cameraPos) {
+  public void cullBackFacesPerspective(Vector3 cameraPos) {
     for(int f = 0; f < this.tris.size(); f += 3) {
       Vector3 faceNormal = Vector3.cross(this.verts.get(tris.get(f + 1)).position.minus(this.verts.get(tris.get(f)).position),
               this.verts.get(tris.get(f + 2)).position.minus(this.verts.get(tris.get(f)).position));
       Vector3 camToFaceVec = this.verts.get(tris.get(f)).position.minus(cameraPos);
       if(Vector3.dot(faceNormal, camToFaceVec) <= 0) {
+        this.tris.remove(f); this.tris.remove(f); this.tris.remove(f);
+        f -= 3;
+      }
+    }
+  }
+
+  public void cullBackFacesOrtho(Vector3 cameraNormal) {
+    for(int f = 0; f < this.tris.size(); f += 3) {
+      Vector3 faceNormal = Vector3.cross(this.verts.get(tris.get(f + 1)).position.minus(this.verts.get(tris.get(f)).position),
+              this.verts.get(tris.get(f + 2)).position.minus(this.verts.get(tris.get(f)).position));
+      if(Vector3.dot(faceNormal, cameraNormal) >= 0) {
         this.tris.remove(f); this.tris.remove(f); this.tris.remove(f);
         f -= 3;
       }

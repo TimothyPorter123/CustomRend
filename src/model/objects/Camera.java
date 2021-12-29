@@ -35,6 +35,8 @@ public abstract class Camera extends WorldObject {
     return this.farClipPlane;
   }
 
+  protected abstract boolean orthographic();
+
   @Override
   public void transform(TransformMatrix transform) {
     super.transform(transform);
@@ -58,7 +60,11 @@ public abstract class Camera extends WorldObject {
     Vector3 viewPlaneNormal = this.getTransform().apply(new Vector3(0, 0, 1)).minus(viewPlanePosition).normalized();
     TransformMatrix IM = M.inverse();
     //backface culling
-    toRender.cullBackFaces(IM.apply(viewPlanePosition));
+    if(this.orthographic()) {
+      toRender.cullBackFacesOrtho(IM.apply(viewPlaneNormal));
+    } else {
+      toRender.cullBackFacesPerspective(IM.apply(viewPlanePosition));
+    }
     //THIS DOES ALL BACK CAMERA CLIPPING
     viewPlanePosition = viewPlanePosition.plus(viewPlaneNormal.scale(this.getNearClipPlane()));
     toRender.clipAgainstPlane(IM.apply(viewPlanePosition), IM.apply(viewPlaneNormal));

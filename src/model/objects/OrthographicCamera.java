@@ -24,6 +24,9 @@ public class OrthographicCamera extends Camera {
     return this.projectionMatrix;
   }
 
+  @Override
+  protected boolean orthographic() { return true; }
+
   private TransformMatrix calculateProjectionMatrix() {
     TransformMatrix projection = new TransformMatrix();
     float c = 1 / (this.farClipPlane - this.nearClipPlane);

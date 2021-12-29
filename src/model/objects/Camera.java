@@ -19,6 +19,10 @@ public abstract class Camera extends WorldObject {
   protected float farClipPlane;
   protected TransformMatrix viewMatrix;
 
+  public Camera() {
+    this.viewMatrix = this.getTransform().inverse();
+  }
+
   public abstract TransformMatrix getProjectionMatrix();
 
   public TransformMatrix getViewMatrix() { return this.viewMatrix; }
@@ -79,10 +83,10 @@ public abstract class Camera extends WorldObject {
       Vector2 rastStart = new Vector2(1, 1);
       Vector2 rastEnd = new Vector2(0, 0);
 
-      rastStart.x = Math.max(Math.min(clipPos1.x, Math.min(clipPos2.x, Math.min(clipPos3.x, 1))), 0) * screenWidth;
-      rastStart.y = Math.max(Math.min(clipPos1.y, Math.min(clipPos2.y, Math.min(clipPos3.y, 1))), 0) * screenHeight;
-      rastEnd.x = Math.min(Math.max(clipPos1.x, Math.max(clipPos2.x, Math.max(clipPos3.x, 0))), 1) * screenWidth;
-      rastEnd.y = Math.min(Math.max(clipPos1.y, Math.max(clipPos2.y, Math.max(clipPos3.y, 0))), 1) * screenHeight;
+      rastStart.x = Math.max(Math.min(clipPos1.x, Math.min(clipPos2.x, Math.min(clipPos3.x, 1))), 0) * screenWidth - 1;
+      rastStart.y = Math.max(Math.min(clipPos1.y, Math.min(clipPos2.y, Math.min(clipPos3.y, 1))), 0) * screenHeight - 1;
+      rastEnd.x = Math.min(Math.max(clipPos1.x, Math.max(clipPos2.x, Math.max(clipPos3.x, 0))), 1) * screenWidth + 1;
+      rastEnd.y = Math.min(Math.max(clipPos1.y, Math.max(clipPos2.y, Math.max(clipPos3.y, 0))), 1) * screenHeight + 1;
 
       for (int y = (int)rastStart.y; y < (int)rastEnd.y; y++) {
         for (int x = (int)rastStart.x; x < (int)rastEnd.x; x++) {

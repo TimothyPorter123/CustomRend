@@ -44,8 +44,18 @@ public class Vector3 {
     return new Vector2(this.x, this.y);
   }
 
+  //linear interpolation
   public static Vector3 lerp(Vector3 v0, Vector3 v1, float factor) {
     return v0.plus((v1.minus(v0)).scale(factor));
+  }
+
+  //trilinear interpolation
+  public static Vector3 terp(Vector3 value1, Vector3 value2, Vector3 value3, float a1, float a2,
+                             float a3, float depth1, float depth2, float depth3) {
+    float xNum = (value1.x * a1 / depth1 + value2.x * a2 / depth2 + value3.x * a3 / depth3);
+    float yNum = (value1.y * a1 / depth1 + value2.y * a2 / depth2 + value3.y * a3 / depth3);
+    float zNum = (value1.z * a1 / depth1 + value2.z * a2 / depth2 + value3.z * a3 / depth3);
+    return new Vector3(xNum, yNum, zNum).scale(1 / (a1 / depth1 + a2 / depth2 + a3 / depth3));
   }
 
   @Override

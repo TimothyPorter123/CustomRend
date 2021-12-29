@@ -7,6 +7,7 @@ import java.awt.image.BufferedImage;
 import javax.swing.*;
 
 import model.*;
+import model.objects.SimpleUVSphere;
 import view.UserModelWindow;
 import model.objects.Camera;
 import model.objects.PerspectiveCamera;
@@ -22,6 +23,7 @@ public class FrameController {
   SimpleSquare squareModel;
   SimpleSquare secondSquare;
   SimpleTriangle triangle;
+  SimpleUVSphere sphere;
   TransformMatrix simpleRotate;
   TransformMatrix reverseRotate;
   TransformMatrix simpleMove;
@@ -67,6 +69,7 @@ public class FrameController {
     squareModel = new SimpleSquare();
     secondSquare = new SimpleSquare();
     triangle = new SimpleTriangle();
+    sphere = new SimpleUVSphere();
 
     simpleRotate = new TransformMatrix().rotate(new Vector3(1.0f, 1.0f, 0.0f));
     reverseRotate = new TransformMatrix().rotate(new Vector3(-1.0f, -1.0f, 0.0f));
@@ -94,15 +97,18 @@ public class FrameController {
       }
     }
 
-    mainWindowBuilder.addShader(new TextureShader(checkerTexture));
+    //mainWindowBuilder.addShader(new TextureShader(checkerTexture));
+    mainWindowBuilder.addShader(new SimpleShader(Color.blue));
     mainWindowBuilder.setCamera(frame.mainCam);
     mainWindowBuilder.setDimension(frame.imageWidth, frame.imageHeight);
-    mainWindowBuilder.setScene(new Scene3D.SceneBuilder().addObject(frame.squareModel).addObject(frame.secondSquare).build());
+    frame.sphere.setSmoothShading(true);
+    mainWindowBuilder.setScene(new Scene3D.SceneBuilder().addObject(frame.sphere)/*.addObject(frame.secondSquare)*/.build());
     UserModelWindow mainWindow = mainWindowBuilder.build();
 
     while(true) {
-      frame.squareModel.transform(frame.simpleRotate);
-      frame.secondSquare.transform(frame.reverseRotate);
+      //frame.squareModel.transform(frame.simpleRotate);
+      //frame.secondSquare.transform(frame.reverseRotate);
+      frame.sphere.transform(frame.reverseRotate);
       mainWindow.render();
       frame.UpdateFrame(mainWindow);
     }

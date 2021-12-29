@@ -56,13 +56,17 @@ public abstract class Camera extends WorldObject {
 
     Vector3 viewPlanePosition = this.getTransform().apply(new Vector3(0, 0, 0));
     Vector3 viewPlaneNormal = this.getTransform().apply(new Vector3(0, 0, 1)).minus(viewPlanePosition).normalized();
-    viewPlanePosition = viewPlanePosition.plus(viewPlaneNormal.scale(this.getNearClipPlane()));
-    //THIS DOES ALL BACK CAMERA CLIPPING
     TransformMatrix IM = M.inverse();
-    Mesh clippedMesh = toRender.clipAgainstPlane(IM.apply(viewPlanePosition), IM.apply(viewPlaneNormal));
+    //backface culling
+    toRender.cullBackFaces(IM.apply(viewPlanePosition));
+    //THIS DOES ALL BACK CAMERA CLIPPING
+    viewPlanePosition = viewPlanePosition.plus(viewPlaneNormal.scale(this.getNearClipPlane()));
+    toRender.clipAgainstPlane(IM.apply(viewPlanePosition), IM.apply(viewPlaneNormal));
+    //clean mesh
+    toRender.clean();
 
-    Vertex[] verts = clippedMesh.verts;
-    int[] vertsToRender = clippedMesh.tris;
+    Vertex[] verts = toRender.getVerts();
+    int[] vertsToRender = toRender.getTris();
     VertexToFragment[] vertToFragData = new VertexToFragment[vertsToRender.length];
 
     for (int i = 0; i < vertsToRender.length; i += 3) {

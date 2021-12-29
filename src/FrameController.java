@@ -37,7 +37,8 @@ public class FrameController {
   //remove
   Camera mainCam;
 
-  long lastFrameMilli = 0;
+  long lastFrameMilli = System.currentTimeMillis();
+  int framesPassed;
 
   public FrameController () {
     mainFrame = new JFrame("Test JFrame");
@@ -115,8 +116,13 @@ public class FrameController {
   }
 
   public void UpdateFrame(UserModelWindow mainWindow) {
-    infoField.setText("FPS: " + (1000 / (System.currentTimeMillis() - lastFrameMilli)));
-    lastFrameMilli = System.currentTimeMillis();
+    if(framesPassed == 10) {
+      infoField.setText("FPS: " + (10000 / (System.currentTimeMillis() - lastFrameMilli)));
+      lastFrameMilli = System.currentTimeMillis();
+      framesPassed = 0;
+    } else {
+      framesPassed++;
+    }
 
     //Flip Image vertically
     BufferedImage output = new BufferedImage(imageWidth, imageHeight, BufferedImage.TYPE_INT_ARGB);

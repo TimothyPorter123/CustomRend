@@ -7,7 +7,8 @@ public class RendererMath {
     return (A.x - B.x) * (P.y - A.y) - (A.y - B.y) * (P.x - A.x);
   }
 
-  public static float trilinearInterpolate(float value1, float value2, float value3, float a1, float a2,
+  //triple interpolation
+  public static float terp(float value1, float value2, float value3, float a1, float a2,
                                      float a3, float depth1, float depth2, float depth3) {
     return (value1 * a1 / depth1 + value2 * a2 / depth2 + value3 * a3 / depth3)
             / (a1 / depth1 + a2 / depth2 + a3 / depth3);

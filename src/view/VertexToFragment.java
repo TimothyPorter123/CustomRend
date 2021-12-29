@@ -22,7 +22,7 @@ public class VertexToFragment {
     float vert1EyeDepth = s.linearEyeDepth(vert1.clipPos.z);
     float vert2EyeDepth = s.linearEyeDepth(vert2.clipPos.z);
     float vert3EyeDepth = s.linearEyeDepth(vert3.clipPos.z);
-    resultant.clipPos.z = s.nonlinearDepth(RendererMath.trilinearInterpolate(vert1EyeDepth, vert2EyeDepth, vert3EyeDepth,
+    resultant.clipPos.z = s.nonlinearDepth(RendererMath.terp(vert1EyeDepth, vert2EyeDepth, vert3EyeDepth,
             a1, a2, a3, vert1EyeDepth, vert2EyeDepth, vert3EyeDepth));
     resultant.normal = Vector3.terp(vert1.normal, vert2.normal, vert3.normal, a1, a2, a3,
             vert1EyeDepth, vert2EyeDepth, vert3EyeDepth);

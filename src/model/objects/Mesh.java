@@ -1,29 +1,51 @@
 package model.objects;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import model.math.Vector2;
 import model.math.Vector3;
 
 public class Mesh {
-  public Vertex[] verts;
-  public int[] tris;
+  private List<Vertex> verts;
+  private List<Integer> tris;
 
   public Mesh(Vertex[] verts, int[] tris) {
+    this.verts = new ArrayList<Vertex>();
+    for (Vertex vert : verts) {
+      this.verts.add(vert);
+    }
+    this.tris = new ArrayList<Integer>();
+    for (int i : tris) {
+      this.tris.add(i);
+    }
+  }
+
+  public Mesh(List<Vertex> verts, List<Integer> tris) {
     this.verts = verts;
     this.tris = tris;
   }
 
+  public Vertex[] getVerts() {
+    Vertex[] verts = new Vertex[this.verts.size()];
+    for(int i = 0; i < this.verts.size(); i++) { verts[i] = this.verts.get(i); }
+    return verts;
+  }
 
-  public Mesh clipAgainstPlane(Vector3 pos, Vector3 normal) {
-    Vertex[] verts = this.verts;
-    int[] tris = this.tris;
+  public int[] getTris() {
+    int[] tris = new int[this.tris.size()];
+    for(int i = 0; i < this.tris.size(); i++) { tris[i] = this.tris.get(i); }
+    return tris;
+  }
+
+  public void clipAgainstPlane(Vector3 pos, Vector3 normal) {
+    Vertex[] verts = this.getVerts();
+    int[] tris = this.getTris();
     List<Integer> modTris = new ArrayList<Integer>();
     List<Vertex> modVerts = new ArrayList<Vertex>();
-    for(Vertex v : verts) {
-      modVerts.add(v);
-    }
+    modVerts.addAll(this.verts);
 
     //do clipping on each triangle
     for(int i = 0; i < tris.length; i += 3) {
@@ -93,22 +115,33 @@ public class Mesh {
       }
     }
 
-    //clear now unused verts from the array
-    for(int v = 0 ; v < modVerts.size(); v++) {
-      if(!modTris.contains(v)) {
-        modVerts.remove(v);
-        for(int i = 0; i < modTris.size(); i++) {
-          modTris.set(i, modTris.get(i) > v ? modTris.get(i) - 1 : modTris.get(i));
+    this.verts = modVerts;
+    this.tris = modTris;
+    this.clean();
+  }
+
+  public void cullBackFaces(Vector3 cameraPos) {
+    for(int f = 0; f < this.tris.size(); f += 3) {
+      Vector3 faceNormal = Vector3.cross(this.verts.get(tris.get(f + 1)).position.minus(this.verts.get(tris.get(f)).position),
+              this.verts.get(tris.get(f + 2)).position.minus(this.verts.get(tris.get(f)).position));
+      Vector3 camToFaceVec = this.verts.get(tris.get(f)).position.minus(cameraPos);
+      if(Vector3.dot(faceNormal, camToFaceVec) <= 0) {
+        this.tris.remove(f); this.tris.remove(f); this.tris.remove(f);
+        f -= 3;
+      }
+    }
+  }
+
+  //clear unused verts from the array
+  public void clean() {
+    for(int v = 0 ; v < this.verts.size(); v++) {
+      if(!this.tris.contains(v)) {
+        this.verts.remove(v);
+        for(int i = 0; i < this.tris.size(); i++) {
+          this.tris.set(i, this.tris.get(i) > v ? this.tris.get(i) - 1 : this.tris.get(i));
         }
         v--;
       }
     }
-
-    //convert lists to arrays because apparently java doesn't have a way to do this which isn't awful
-    Vertex[] newVerts = new Vertex[modVerts.size()];
-    for(int v = 0; v < modVerts.size(); v++) { newVerts[v] = modVerts.get(v); }
-    int[] newTris = new int[modTris.size()];
-    for(int i = 0; i < modTris.size(); i++) { newTris[i] = modTris.get(i); }
-    return new Mesh(newVerts, newTris);
   }
 }

@@ -13,6 +13,7 @@ import view.shaders.Shader;
 public class UserModelWindow {
 
   private Shader defaultShader;
+  private Shader defaultLineShader;
   private Scene3D scene;
   private final Camera viewerCamera;
   private int windowWidth;
@@ -21,6 +22,7 @@ public class UserModelWindow {
 
   public UserModelWindow(Shader defaultShader, Scene3D scene, Camera viewerCamera, int windowWidth, int windowHeight) {
     this.defaultShader = defaultShader;
+    this.defaultLineShader = new LineShader(Color.black);
     this.scene = scene;
     this.viewerCamera = viewerCamera;
     this.windowWidth = windowWidth;
@@ -52,15 +54,16 @@ public class UserModelWindow {
   }
 
   public void render() {
-    //SurfaceRenderer applicator = new SurfaceRenderer(defaultShader, windowWidth, windowHeight);
-    RenderOutput objects = RenderOutput.blank(windowWidth, windowHeight);
+
+    RenderOutput lines = drawObjectGrid(RenderOutput.blank(windowWidth, windowHeight));
+
+    RenderOutput objects = lines;
     for(RenderObjectModel o : scene.getVisibleObjects()) {
       objects = viewerCamera.renderObjectSurfaceOver(o, defaultShader, objects);
+      objects = viewerCamera.renderObjectWireFrameOver(o, defaultLineShader, objects);
     }
 
-    RenderOutput withLines = drawObjectGrid(objects);
-
-    MRR = withLines;
+    MRR = objects;
   }
 
   private RenderOutput drawObjectGrid(RenderOutput in) {

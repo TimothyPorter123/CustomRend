@@ -93,10 +93,14 @@ public abstract class Camera extends WorldObject {
       Vector2 rastStart = new Vector2(1, 1);
       Vector2 rastEnd = new Vector2(0, 0);
 
-      rastStart.x = Math.max(Math.min(clipPos1.x, Math.min(clipPos2.x, Math.min(clipPos3.x, 1))), 0) * screenWidth - 1;
-      rastStart.y = Math.max(Math.min(clipPos1.y, Math.min(clipPos2.y, Math.min(clipPos3.y, 1))), 0) * screenHeight - 1;
-      rastEnd.x = Math.min(Math.max(clipPos1.x, Math.max(clipPos2.x, Math.max(clipPos3.x, 0))), 1) * screenWidth + 1;
-      rastEnd.y = Math.min(Math.max(clipPos1.y, Math.max(clipPos2.y, Math.max(clipPos3.y, 0))), 1) * screenHeight + 1;
+      rastStart.x = Math.min(clipPos1.x, Math.min(clipPos2.x, clipPos3.x)) * screenWidth - 1;
+      rastStart.x = Math.max(Math.min(rastStart.x, screenWidth), 0);
+      rastStart.y = Math.min(clipPos1.y, Math.min(clipPos2.y, clipPos3.y)) * screenHeight - 1;
+      rastStart.y = Math.max(Math.min(rastStart.y, screenHeight), 0);
+      rastEnd.x = Math.max(clipPos1.x, Math.max(clipPos2.x, clipPos3.x)) * screenWidth + 1;
+      rastEnd.x = Math.min(Math.max(rastEnd.x, 0), screenWidth);
+      rastEnd.y = Math.max(clipPos1.y, Math.max(clipPos2.y, clipPos3.y)) * screenHeight + 1;
+      rastEnd.y = Math.min(Math.max(rastEnd.y, 0), screenHeight);
 
       for (int y = (int)rastStart.y; y < (int)rastEnd.y; y++) {
         for (int x = (int)rastStart.x; x < (int)rastEnd.x; x++) {
@@ -113,6 +117,18 @@ public abstract class Camera extends WorldObject {
       }
     }
     return new RenderOutput(base, buffer);
+  }
+
+  public RenderOutput renderObjectWireFrameOver(RenderObjectModel model, Shader shader, RenderOutput previous) {
+    RenderOutput curr = previous;
+    int[] edges = model.getEdges();
+    Vector3[] verts = model.getVertices();
+    for(int e = 0; e < edges.length; e += 2) {
+      Vector3 start = model.getTransform().apply(verts[edges[e]]);
+      Vector3 end = model.getTransform().apply(verts[edges[e + 1]]);
+      curr = renderLineOver(start, end, shader, curr);
+    }
+    return curr;
   }
 
   public RenderOutput renderLineOver(Vector3 start, Vector3 end, Shader shader, RenderOutput previous) {
@@ -192,27 +208,27 @@ public abstract class Camera extends WorldObject {
 
     float xIncrement;
     float yIncrement;
-    float incrementCount;
+    int incrementCount;
 
     //X-centric or Y-centric change
     boolean xCentric = Math.abs(vert1v2f.clipPos.x - vert2v2f.clipPos.x) > Math.abs(vert1v2f.clipPos.y - vert2v2f.clipPos.y);
     //choose rightmost or higher point depending on change direction
     if((xCentric && vert1v2f.clipPos.x < vert2v2f.clipPos.x)
     || (!xCentric && vert1v2f.clipPos.y < vert2v2f.clipPos.y)) {
-      pixelStart = new Vector2((int)(vert1v2f.clipPos.x * screenWidth), (int)(vert1v2f.clipPos.y * screenHeight));
-      pixelEnd = new Vector2((int)(vert2v2f.clipPos.x * screenWidth), (int)(vert2v2f.clipPos.y * screenHeight));
+      pixelStart = new Vector2((vert1v2f.clipPos.x * screenWidth), (vert1v2f.clipPos.y * screenHeight));
+      pixelEnd = new Vector2((vert2v2f.clipPos.x * screenWidth), (vert2v2f.clipPos.y * screenHeight));
     } else {
-      pixelStart = new Vector2((int)(vert2v2f.clipPos.x * screenWidth), (int)(vert2v2f.clipPos.y * screenHeight));
-      pixelEnd = new Vector2((int)(vert1v2f.clipPos.x * screenWidth), (int)(vert1v2f.clipPos.y * screenHeight));
+      pixelStart = new Vector2((vert2v2f.clipPos.x * screenWidth), (vert2v2f.clipPos.y * screenHeight));
+      pixelEnd = new Vector2((vert1v2f.clipPos.x * screenWidth), (vert1v2f.clipPos.y * screenHeight));
     }
 
     //set values for iteration over line
     if(xCentric) {
-      incrementCount = pixelEnd.x - pixelStart.x;
+      incrementCount = Math.round(pixelEnd.x - pixelStart.x);
       xIncrement = 1;
       yIncrement = (pixelStart.y - pixelEnd.y) / (pixelStart.x - pixelEnd.x);
     } else {
-      incrementCount = pixelEnd.y - pixelStart.y;
+      incrementCount = Math.round(pixelEnd.y - pixelStart.y);
       xIncrement = (pixelStart.x - pixelEnd.x) / (pixelStart.y - pixelEnd.y);
       yIncrement = 1;
     }
@@ -223,7 +239,7 @@ public abstract class Camera extends WorldObject {
       if(x >= 0 && x < screenWidth && y >= 0 && y < screenHeight) {
         Vector2 point = new Vector2((float) x / screenWidth, (float) y / screenHeight);
         VertexToFragment v2f = LineRendererMath.onLineInterpolation(point, vert1v2f, vert2v2f, sData);
-        if (v2f.clipPos.z < Float.intBitsToFloat(buffer.getRGB(x, y)) && v2f.clipPos.z > 0) {
+        if (v2f.clipPos.z <= Float.intBitsToFloat(buffer.getRGB(x, y)) + 0.0006f && v2f.clipPos.z > 0) {
           buffer.setRGB(x, y, Float.floatToIntBits(v2f.clipPos.z));
           base.setRGB(x, y, shader.frag(v2f, sData).getRGB());
         }

@@ -3,7 +3,7 @@ package model.objects;
 import model.math.Vector2;
 import model.math.Vector3;
 
-public class SimpleTriangle extends SimpleModel {
+public final class SimpleTriangle extends SimpleModel {
 
   public SimpleTriangle() {
     super();
@@ -18,6 +18,7 @@ public class SimpleTriangle extends SimpleModel {
     int[][] faces = new int[1][2];
     faces[0] = new int[] { 0, 1, 2 };
     this.setFaces(faces);
+    this.setEdges(new int[] { 0, 1, 1, 2, 2, 0});
 
     Vector2[][] uvs = new Vector2[1][2];
     uvs[0] = new Vector2[] { new Vector2(1, 1), new Vector2(0, 1), new Vector2(1f / 2, 1f / 2) };

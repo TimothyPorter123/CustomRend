@@ -270,7 +270,7 @@ public abstract class Camera extends WorldObject {
       if(x >= 0 && x < screenWidth && y >= 0 && y < screenHeight) {
         Vector2 point = new Vector2((float) x / screenWidth, (float) y / screenHeight);
         VertexToFragment v2f = LineRendererMath.onLineInterpolation(point, vert1v2f, vert2v2f, sData);
-        if (v2f.clipPos.z <= Float.intBitsToFloat(buffer.getRGB(x, y)) + 0.0006f && v2f.clipPos.z > 0) {
+        if (v2f.clipPos.z <= Float.intBitsToFloat(buffer.getRGB(x, y)) + 0.0003f && v2f.clipPos.z > 0) {
           buffer.setRGB(x, y, Float.floatToIntBits(v2f.clipPos.z));
           int initalC = base.getRGB(x, y);
           base.setRGB(x, y, RendererMath.blendColor(initalC, shader.frag(v2f, sData).getRGB(), factor).getRGB());

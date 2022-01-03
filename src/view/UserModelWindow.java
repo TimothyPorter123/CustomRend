@@ -55,15 +55,19 @@ public class UserModelWindow {
 
   public void render() {
 
-    RenderOutput lines = drawObjectGrid(RenderOutput.blank(windowWidth, windowHeight));
-
-    RenderOutput objects = lines;
+    RenderOutput objects = RenderOutput.blank(windowWidth, windowHeight);
     for(RenderObjectModel o : scene.getVisibleObjects()) {
       objects = viewerCamera.renderObjectSurfaceOver(o, defaultShader, objects);
-      objects = viewerCamera.renderObjectWireFrameOver(o, defaultLineShader, objects);
     }
 
-    MRR = objects;
+
+    RenderOutput lines = drawObjectGrid(objects);
+
+    for(RenderObjectModel o : scene.getVisibleObjects()) {
+      lines = viewerCamera.renderObjectWireFrameOver(o, defaultLineShader, lines);
+    }
+
+    MRR = lines;
   }
 
   private RenderOutput drawObjectGrid(RenderOutput in) {

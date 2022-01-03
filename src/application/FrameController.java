@@ -5,9 +5,17 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
+import java.io.IOException;
 
 import javax.swing.*;
 
+import javafx.animation.Animation;
+import javafx.application.Application;
+import javafx.scene.Scene;
+import javafx.scene.control.Label;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.HBox;
+import javafx.stage.Stage;
 import model.*;
 import model.objects.SimpleUVSphere;
 import view.UserModelWindow;
@@ -20,7 +28,7 @@ import view.shaders.SimpleShader;
 import model.objects.SimpleSquare;
 import javafx.embed.swing.*;
 
-public class FrameController {
+public class FrameController extends Application {
 
   SimpleSquare squareModel;
   SimpleSquare secondSquare;
@@ -32,40 +40,49 @@ public class FrameController {
 
   int imageWidth = 800;
   int imageHeight = 600;
-  JTextField infoField;
-  JFrame mainFrame;
-  JPanel renderPanel;
+  Label infoField;
+  static FrameController mainFrame;
+  ImageView renderPanel;
 
   //remove
   Camera mainCam;
+  UserModelWindow mainWindow;
 
   long lastFrameMilli = System.currentTimeMillis();
   int framesPassed;
 
-  public FrameController () {
-    mainFrame = new JFrame("Test JFrame");
+  @Override
+  public void start(Stage stage) throws IOException {
     this.setClassDefaults();
+    mainFrame = this;
 
-    renderPanel = new JPanel();
-    renderPanel.setPreferredSize(new Dimension(imageWidth, imageHeight));
-    JPanel infoPanel = new JPanel();
-    infoPanel.setPreferredSize(new Dimension(imageWidth, 50));
-    infoField = new JTextField("default text");
-    infoPanel.add(infoField);
-    renderPanel.addMouseListener(new MouseAdapter() {
+    renderPanel = new ImageView();
+    renderPanel.setFitWidth(imageWidth);
+    renderPanel.setFitHeight(imageHeight);
+
+    infoField = new Label("default text");
+    infoField.setMaxWidth(imageWidth);
+
+    HBox hbox = new HBox(renderPanel, infoField);
+    Scene scene = new Scene(hbox, imageWidth, imageHeight);
+    stage.setTitle("Test JavaFX");
+
+    stage.setScene(scene);
+    stage.show();
+    Animation frameAnim = new Animation() {
+    }
+    while(true) {
+      if(mainFrame != null) {
+        mainFrame.mainWindow.render();
+        mainFrame.UpdateFrame(mainFrame.mainWindow);
+      }
+    }
+    /*renderPanel.addMouseListener(new MouseAdapter() {
       @Override
       public void mouseClicked(MouseEvent e) {
         mainCam.transform(new TransformMatrix().rotate(new Vector3(5, 0, 0)));
-        mainFrame.repaint();
       }
-    });
-    mainFrame.setLayout(new BoxLayout(mainFrame.getContentPane(), BoxLayout.PAGE_AXIS));
-    mainFrame.add(renderPanel);
-    mainFrame.add(infoPanel);
-    mainFrame.pack();
-
-    mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-    mainFrame.setVisible(true);
+    });*/
   }
 
   private void setClassDefaults() {
@@ -77,19 +94,28 @@ public class FrameController {
     simpleRotate = new TransformMatrix().rotate(new Vector3(1.0f, 1.0f, 0.0f));
     reverseRotate = new TransformMatrix().rotate(new Vector3(-1.0f, -1.0f, 0.0f));
     simpleMove = new TransformMatrix().move(new Vector3(0.0f, 0.1f, 0.0f));
+
+    //temp ?
+
+    //CLIPPING PLANE =/= 0
+    mainCam = new PerspectiveCamera(90, 0.1f, 1000f, (float)imageHeight / imageWidth);
+    mainCam.transform(new TransformMatrix().move(new Vector3(3.0f, 3.0f, 3.0f)));
+    mainCam.transform(new TransformMatrix().rotate(new Vector3(45, 225, 0)));
+
+    UserModelWindow.UserWindowBuilder mainWindowBuilder = new UserModelWindow.UserWindowBuilder();
+    //mainWindowBuilder.addShader(new TextureShader(checkerTexture));
+    mainWindowBuilder.addShader(new SimpleShader(Color.blue));
+    mainWindowBuilder.setCamera(mainCam);
+    mainWindowBuilder.setDimension(imageWidth, imageHeight);
+    sphere.setSmoothShading(true);
+    mainWindowBuilder.setScene(new Scene3D.SceneBuilder().addObject(sphere)/*.addObject(frame.secondSquare)*/.build());
+    mainWindow = mainWindowBuilder.build();
   }
 
 
   public static void main(String[] args) {
-    FrameController frame = new FrameController();
-    UserModelWindow.UserWindowBuilder mainWindowBuilder = new UserModelWindow.UserWindowBuilder();
 
-    //CLIPPING PLANE =/= 0
-    frame.mainCam = new PerspectiveCamera(90, 0.1f, 1000f, (float)frame.imageHeight / frame.imageWidth);
-    frame.mainCam.transform(new TransformMatrix().move(new Vector3(3.0f, 3.0f, 3.0f)));
-    frame.mainCam.transform(new TransformMatrix().rotate(new Vector3(45, 225, 0)));
-
-    BufferedImage checkerTexture = new BufferedImage(9, 9, BufferedImage.TYPE_INT_ARGB);
+    /*BufferedImage checkerTexture = new BufferedImage(9, 9, BufferedImage.TYPE_INT_ARGB);
     for(int x = 0; x < 9; x++) {
       for(int y = 0; y < 9; y++) {
         if((x + y) % 2 == 0) {
@@ -98,26 +124,23 @@ public class FrameController {
           checkerTexture.setRGB(x, y, Color.white.getRGB());
         }
       }
-    }
+    }*/
 
-    //mainWindowBuilder.addShader(new TextureShader(checkerTexture));
-    mainWindowBuilder.addShader(new SimpleShader(Color.blue));
-    mainWindowBuilder.setCamera(frame.mainCam);
-    mainWindowBuilder.setDimension(frame.imageWidth, frame.imageHeight);
-    frame.sphere.setSmoothShading(true);
-    mainWindowBuilder.setScene(new Scene3D.SceneBuilder().addObject(frame.sphere)/*.addObject(frame.secondSquare)*/.build());
-    UserModelWindow mainWindow = mainWindowBuilder.build();
+    launch();
 
-    while(true) {
-      //frame.squareModel.transform(frame.simpleRotate);
-      //frame.secondSquare.transform(frame.reverseRotate);
-      frame.sphere.transform(frame.reverseRotate);
-      mainWindow.render();
-      frame.UpdateFrame(mainWindow);
-    }
+    /*while(true) {
+      if(mainFrame != null) {
+        mainFrame.mainWindow.render();
+        mainFrame.UpdateFrame(mainFrame.mainWindow);
+      }
+    }*/
   }
 
   public void UpdateFrame(UserModelWindow mainWindow) {
+    //frame.squareModel.transform(frame.simpleRotate);
+    //frame.secondSquare.transform(frame.reverseRotate);
+    sphere.transform(reverseRotate);
+
     if(framesPassed == 10) {
       infoField.setText("FPS: " + (10000 / (System.currentTimeMillis() - lastFrameMilli)));
       lastFrameMilli = System.currentTimeMillis();
@@ -134,9 +157,6 @@ public class FrameController {
     g2.transform(at);
     g2.drawImage(mainWindow.fetchMostRecent().image, 0, 0, null);
 
-    renderPanel.removeAll();
-    renderPanel.add(new JLabel(new ImageIcon(output)));
-    mainFrame.revalidate();
-    mainFrame.repaint();
+    renderPanel.setImage(SwingFXUtils.toFXImage(output, null));
   }
 }

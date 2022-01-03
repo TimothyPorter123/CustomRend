@@ -1,3 +1,5 @@
+package application;
+
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -16,7 +18,7 @@ import model.math.TransformMatrix;
 import model.math.Vector3;
 import view.shaders.SimpleShader;
 import model.objects.SimpleSquare;
-import view.shaders.TextureShader;
+import javafx.embed.swing.*;
 
 public class FrameController {
 
@@ -84,8 +86,8 @@ public class FrameController {
 
     //CLIPPING PLANE =/= 0
     frame.mainCam = new PerspectiveCamera(90, 0.1f, 1000f, (float)frame.imageHeight / frame.imageWidth);
-    frame.mainCam.transform(new TransformMatrix().move(new Vector3(0, 3.0f, 3.0f)));
-    frame.mainCam.transform(new TransformMatrix().rotate(new Vector3(45, 180, 0)));
+    frame.mainCam.transform(new TransformMatrix().move(new Vector3(3.0f, 3.0f, 3.0f)));
+    frame.mainCam.transform(new TransformMatrix().rotate(new Vector3(45, 225, 0)));
 
     BufferedImage checkerTexture = new BufferedImage(9, 9, BufferedImage.TYPE_INT_ARGB);
     for(int x = 0; x < 9; x++) {

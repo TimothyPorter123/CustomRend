@@ -69,15 +69,16 @@ public class UserModelWindow {
   private RenderOutput drawObjectGrid(RenderOutput in) {
     LineShader lineShader = new LineShader(Color.blue);
     //LineRenderer lineRenderer = new LineRenderer(lineShader, windowWidth, windowHeight);
+    int lineCount = 30;
     RenderOutput withLine = in;
-    for(int x = -2; x < 3; x++) {
-      lineShader.setColor(x == 0 ? Color.blue : Color.white);
-      withLine = viewerCamera.renderLineOver(new Vector3(x, 0, 2f), new Vector3(x, 0, -2f),
+    for(int x = -lineCount; x < lineCount + 1; x++) {
+      lineShader.setColor(x == 0 ? Color.blue : Color.gray);
+      withLine = viewerCamera.renderLineOver(new Vector3(x, 0, lineCount), new Vector3(x, 0, -lineCount),
               lineShader, withLine);
     }
-    for(int z = -2; z < 3; z++) {
-      lineShader.setColor(z == 0 ? Color.red : Color.white);
-      withLine = viewerCamera.renderLineOver(new Vector3(2f, 0, z), new Vector3(-2f, 0, z),
+    for(int z = -lineCount; z < lineCount + 1; z++) {
+      lineShader.setColor(z == 0 ? Color.red : Color.gray);
+      withLine = viewerCamera.renderLineOver(new Vector3(lineCount, 0, z), new Vector3(-lineCount, 0, z),
               lineShader, withLine);
     }
     return withLine;

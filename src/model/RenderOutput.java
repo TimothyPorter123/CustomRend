@@ -19,7 +19,7 @@ public class RenderOutput {
     for (int y = 0; y < height; y++) {
       for (int x = 0; x < width; x++) {
         depthBuffer.setRGB(x, y, Float.floatToIntBits(1.0f));
-        image.setRGB(x, y, Color.gray.getRGB());
+        image.setRGB(x, y, Color.darkGray.getRGB());
       }
     }
     return new RenderOutput(image, depthBuffer);

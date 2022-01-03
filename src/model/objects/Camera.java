@@ -1,5 +1,6 @@
 package model.objects;
 
+import java.awt.*;
 import java.awt.image.BufferedImage;
 
 import model.RenderObjectModel;
@@ -8,6 +9,7 @@ import model.math.TransformMatrix;
 import model.math.Vector2;
 import model.math.Vector3;
 import view.LineRendererMath;
+import view.RendererMath;
 import view.shaders.Shader;
 import view.ShaderData;
 import view.VertexData;
@@ -234,16 +236,47 @@ public abstract class Camera extends WorldObject {
     }
 
     for(int i = 0; i < incrementCount + 1; i++) {
-      int x = Math.round(pixelStart.x + i * xIncrement);
-      int y = Math.round(pixelStart.y + i * yIncrement);
+      float preciseX = pixelStart.x + i * xIncrement;
+      float preciseY = pixelStart.y + i * yIncrement;
+      int x;
+      int y;
+      float factor;
+      if(xIncrement == 1) {
+        x = Math.round(preciseX);
+        y = (int)(preciseY);
+        factor = preciseY - (int)preciseY;
+      } else {
+        x = (int)(preciseX);
+        y = Math.round(preciseY);
+        factor = preciseX - (int)preciseX;
+      }
+
       if(x >= 0 && x < screenWidth && y >= 0 && y < screenHeight) {
         Vector2 point = new Vector2((float) x / screenWidth, (float) y / screenHeight);
         VertexToFragment v2f = LineRendererMath.onLineInterpolation(point, vert1v2f, vert2v2f, sData);
         if (v2f.clipPos.z <= Float.intBitsToFloat(buffer.getRGB(x, y)) + 0.0006f && v2f.clipPos.z > 0) {
           buffer.setRGB(x, y, Float.floatToIntBits(v2f.clipPos.z));
-          base.setRGB(x, y, shader.frag(v2f, sData).getRGB());
+          int initalC = base.getRGB(x, y);
+          base.setRGB(x, y, RendererMath.blendColor(initalC, shader.frag(v2f, sData).getRGB(), 1 - factor).getRGB());
         }
       }
+
+      if(xIncrement == 1) {
+        y++;
+      } else {
+        x++;
+      }
+
+      if(x >= 0 && x < screenWidth && y >= 0 && y < screenHeight) {
+        Vector2 point = new Vector2((float) x / screenWidth, (float) y / screenHeight);
+        VertexToFragment v2f = LineRendererMath.onLineInterpolation(point, vert1v2f, vert2v2f, sData);
+        if (v2f.clipPos.z <= Float.intBitsToFloat(buffer.getRGB(x, y)) + 0.0006f && v2f.clipPos.z > 0) {
+          buffer.setRGB(x, y, Float.floatToIntBits(v2f.clipPos.z));
+          int initalC = base.getRGB(x, y);
+          base.setRGB(x, y, RendererMath.blendColor(initalC, shader.frag(v2f, sData).getRGB(), factor).getRGB());
+        }
+      }
+
     }
 
     return new RenderOutput(base, buffer);

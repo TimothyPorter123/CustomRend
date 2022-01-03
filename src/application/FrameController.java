@@ -18,7 +18,6 @@ import model.math.TransformMatrix;
 import model.math.Vector3;
 import view.shaders.SimpleShader;
 import model.objects.SimpleSquare;
-import javafx.embed.swing.*;
 
 public class FrameController {
 

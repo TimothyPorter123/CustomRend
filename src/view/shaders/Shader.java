@@ -1,7 +1,6 @@
 package view.shaders;
 
-import java.awt.*;
-
+import model.math.Vector4;
 import view.ShaderData;
 import view.VertexData;
 import view.VertexToFragment;
@@ -10,5 +9,5 @@ public interface Shader {
 
   public VertexToFragment vert(VertexData v, ShaderData s);
 
-  public Color frag(VertexToFragment o, ShaderData s);
+  public Vector4 frag(VertexToFragment o, ShaderData s);
 }

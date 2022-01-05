@@ -9,13 +9,13 @@ public class VertexToFragment {
   public Vector3 clipPos;
 
 
-  public static VertexToFragment barycentricInterpolation(Vector2 point,
+  public static VertexToFragment barycentricInterpolation(Vector2 point, float totalArea,
                                                            VertexToFragment vert1, VertexToFragment vert2, VertexToFragment vert3,
+                                                           float w0, float w1, float w2,
                                                            ShaderData s) {
-    float totalArea = RendererMath.triangleArea(vert1.clipPos.xy(), vert2.clipPos.xy(), vert3.clipPos.xy());
-    float a1 = RendererMath.triangleArea(vert2.clipPos.xy(), vert3.clipPos.xy(), point) / totalArea;
-    float a2 = RendererMath.triangleArea(vert1.clipPos.xy(), vert3.clipPos.xy(), point) / totalArea;
-    float a3 = RendererMath.triangleArea(vert1.clipPos.xy(), vert2.clipPos.xy(), point) / totalArea;
+    float a1 = w0 / totalArea;
+    float a2 = w1 / totalArea;
+    float a3 = w2 / totalArea;
 
     VertexToFragment resultant = new VertexToFragment();
     resultant.clipPos = new Vector3(point.x, point.y, 0.0f);

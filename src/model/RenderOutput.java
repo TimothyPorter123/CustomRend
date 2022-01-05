@@ -3,25 +3,22 @@ package model;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 
+import model.math.Vector4;
+import view.PreImage;
+
 public class RenderOutput {
 
-  public final BufferedImage image;
-  public final BufferedImage depthBuffer;
+  public final PreImage image;
+  public final PreImage depthBuffer;
 
-  public RenderOutput(BufferedImage image, BufferedImage buffer) {
+  public RenderOutput(PreImage image, PreImage buffer) {
     this.image = image;
     this.depthBuffer = buffer;
   }
 
   public static RenderOutput blank(int width, int height) {
-    BufferedImage depthBuffer = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-    BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-    for (int y = 0; y < height; y++) {
-      for (int x = 0; x < width; x++) {
-        depthBuffer.setRGB(x, y, Float.floatToIntBits(1.0f));
-        image.setRGB(x, y, Color.darkGray.getRGB());
-      }
-    }
+    PreImage depthBuffer = new PreImage(width, height, new Vector4(1.0f, 1.0f, 1.0f, 1.0f));
+    PreImage image = new PreImage(width, height, new Vector4(0.666f, 0.666f, 0.666f, 1.0f));
     return new RenderOutput(image, depthBuffer);
   }
 

@@ -4,6 +4,7 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 
 import model.math.Vector2;
+import model.math.Vector4;
 import view.ShaderData;
 import view.VertexData;
 import view.VertexToFragment;
@@ -30,10 +31,9 @@ public class TextureShader implements Shader {
   }
 
   @Override
-  public Color frag(VertexToFragment o, ShaderData s) {
+  public Vector4 frag(VertexToFragment o, ShaderData s) {
     Vector2 pixelLoc = o.uv.scale(mainTex.getWidth()).minus(new Vector2(1, 1).scale(0.00001f));
     int imageRGB = mainTex.getRGB((int)pixelLoc.x, (int)pixelLoc.y);
-    Color imageSample = new Color((imageRGB & 0x00ff0000) >> 16, (imageRGB & 0x0000ff00) >> 8, imageRGB & 0x000000ff);
-    return imageSample;
+    return new Vector4(imageRGB);
   }
 }

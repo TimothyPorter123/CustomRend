@@ -10,6 +10,7 @@ import javax.swing.*;
 
 import model.*;
 import model.objects.SimpleUVSphere;
+import view.PreImage;
 import view.UserModelWindow;
 import model.objects.Camera;
 import model.objects.PerspectiveCamera;
@@ -126,15 +127,16 @@ public class FrameController {
     }
 
     //Flip Image vertically
-    BufferedImage output = new BufferedImage(imageWidth, imageHeight, BufferedImage.TYPE_INT_ARGB);
-    Graphics2D g2 = output.createGraphics();
-    AffineTransform at = AffineTransform.getScaleInstance(1, -1);
-    at.translate(0, -imageHeight);
-    g2.transform(at);
-    g2.drawImage(mainWindow.fetchMostRecent().image, 0, 0, null);
+    BufferedImage base = new BufferedImage(imageWidth, imageHeight, BufferedImage.TYPE_INT_ARGB);
+    PreImage returned = mainWindow.fetchMostRecent().image;
+    for(int x = 0; x < imageWidth; x++) {
+      for(int y = 0; y < imageHeight; y++) {
+        base.setRGB(x, imageHeight - 1 - y, returned.getPixel(x, y).getRGB());
+      }
+    }
 
     renderPanel.removeAll();
-    renderPanel.add(new JLabel(new ImageIcon(output)));
+    renderPanel.add(new JLabel(new ImageIcon(base)));
     mainFrame.revalidate();
     mainFrame.repaint();
   }

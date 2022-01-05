@@ -51,10 +51,10 @@ public class Vector2 {
   }
 
 
-  public boolean barycentricInside(Vector2 v0, Vector2 v1, Vector2 v2) {
-    float w0 = -RendererMath.edgeFunction(v1, v2, this);
-    float w1 = -RendererMath.edgeFunction(v2, v0, this);
-    float w2 = -RendererMath.edgeFunction(v0, v1, this);
+  /*public boolean barycentricInside(Vector2 v0, Vector2 v1, Vector2 v2) {
+    float w0 = RendererMath.edgeFunction(v1, v2, this);
+    float w1 = RendererMath.edgeFunction(v2, v0, this);
+    float w2 = RendererMath.edgeFunction(v0, v1, this);
 
     Vector2 edge0 = v2.minus(v1);
     Vector2 edge1 = v0.minus(v2);
@@ -67,7 +67,7 @@ public class Vector2 {
     overlaps &= (w1 == 0 ? ((edge1.y == 0 && edge1.x > 0) || edge1.y > 0) : (w1 > 0));
     overlaps &= (w1 == 0 ? ((edge2.y == 0 && edge2.x > 0) || edge2.y > 0) : (w2 > 0));
     return overlaps;
-  }
+  }*/
 
   @Override
   public String toString() {

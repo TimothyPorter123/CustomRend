@@ -1,14 +1,15 @@
 package model.objects;
 
 import java.awt.*;
-import java.awt.image.BufferedImage;
 
 import model.RenderObjectModel;
 import model.RenderOutput;
 import model.math.TransformMatrix;
 import model.math.Vector2;
 import model.math.Vector3;
+import model.math.Vector4;
 import view.LineRendererMath;
+import view.PreImage;
 import view.RendererMath;
 import view.shaders.Shader;
 import view.ShaderData;
@@ -46,10 +47,10 @@ public abstract class Camera extends WorldObject {
   }
 
   public RenderOutput renderObjectSurfaceOver(RenderObjectModel model, Shader shader, RenderOutput previous) {
-    BufferedImage buffer = previous.depthBuffer;
-    BufferedImage base = previous.image;
-    int screenWidth = base.getWidth();
-    int screenHeight = base.getHeight();
+    PreImage buffer = previous.depthBuffer;
+    PreImage base = previous.image;
+    int screenWidth = base.width;
+    int screenHeight = base.height;
 
     TransformMatrix M = model.getTransform();
     TransformMatrix V = this.getViewMatrix();
@@ -91,31 +92,57 @@ public abstract class Camera extends WorldObject {
       Vector2 clipPos1 = vertToFragData[i].clipPos.xy();
       Vector2 clipPos2 = vertToFragData[i + 1].clipPos.xy();
       Vector2 clipPos3 = vertToFragData[i + 2].clipPos.xy();
+      Vector2 scaledClipPos1 = new Vector2(clipPos1.x * screenWidth, clipPos1.y * screenHeight);
+      Vector2 scaledClipPos2 = new Vector2(clipPos2.x * screenWidth, clipPos2.y * screenHeight);
+      Vector2 scaledClipPos3 = new Vector2(clipPos3.x * screenWidth, clipPos3.y * screenHeight);
+
 
       Vector2 rastStart = new Vector2(1, 1);
       Vector2 rastEnd = new Vector2(0, 0);
 
       rastStart.x = Math.min(clipPos1.x, Math.min(clipPos2.x, clipPos3.x)) * screenWidth - 1;
-      rastStart.x = Math.max(Math.min(rastStart.x, screenWidth), 0);
+      rastStart.x = (int)Math.max(Math.min(rastStart.x, screenWidth), 0);
       rastStart.y = Math.min(clipPos1.y, Math.min(clipPos2.y, clipPos3.y)) * screenHeight - 1;
-      rastStart.y = Math.max(Math.min(rastStart.y, screenHeight), 0);
+      rastStart.y = (int)Math.max(Math.min(rastStart.y, screenHeight), 0);
       rastEnd.x = Math.max(clipPos1.x, Math.max(clipPos2.x, clipPos3.x)) * screenWidth + 1;
       rastEnd.x = Math.min(Math.max(rastEnd.x, 0), screenWidth);
       rastEnd.y = Math.max(clipPos1.y, Math.max(clipPos2.y, clipPos3.y)) * screenHeight + 1;
       rastEnd.y = Math.min(Math.max(rastEnd.y, 0), screenHeight);
 
+      //set increments
+      float R0 = scaledClipPos3.x - scaledClipPos2.x, C0 = scaledClipPos2.y - scaledClipPos3.y;
+      float R1 = scaledClipPos1.x - scaledClipPos3.x, C1 = scaledClipPos3.y - scaledClipPos1.y;
+      float R2 = scaledClipPos2.x - scaledClipPos1.x, C2 = scaledClipPos1.y - scaledClipPos2.y;
+
+      //inital values
+      float w0_row = RendererMath.edgeFunction(scaledClipPos2, scaledClipPos3, rastStart);
+      float w1_row = RendererMath.edgeFunction(scaledClipPos3, scaledClipPos1, rastStart);
+      float w2_row = RendererMath.edgeFunction(scaledClipPos1, scaledClipPos2, rastStart);
+      float totalArea = RendererMath.triangleArea(clipPos1, clipPos2, clipPos3) * 2;
+
       for (int y = (int)rastStart.y; y < (int)rastEnd.y; y++) {
+
+        float w0 = w0_row;
+        float w1 = w1_row;
+        float w2 = w2_row;
+
         for (int x = (int)rastStart.x; x < (int)rastEnd.x; x++) {
           Vector2 point = new Vector2((float) x / screenWidth, (float) y / screenHeight);
-          if (point.barycentricInside(clipPos1, clipPos2, clipPos3)) {
-            VertexToFragment v2f = VertexToFragment.barycentricInterpolation(point, vertToFragData[i],
-                    vertToFragData[i + 1], vertToFragData[i + 2], sData);
-            if (v2f.clipPos.z < Float.intBitsToFloat(buffer.getRGB(x, y)) && v2f.clipPos.z > 0) {
-              buffer.setRGB(x, y, Float.floatToIntBits(v2f.clipPos.z));
-              base.setRGB(x, y, shader.frag(v2f, sData).getRGB());
+          //if (RendererMath.topLeftEdgeFunction(scaledClipPos1, scaledClipPos2, scaledClipPos3, w0, w1, w2)) {
+          if(w0 >= 0 && w1 >= 0 && w2 >= 0) {
+            VertexToFragment v2f = VertexToFragment.barycentricInterpolation(point, totalArea, vertToFragData[i],
+                    vertToFragData[i + 1], vertToFragData[i + 2], w0, w1, w2, sData);
+            if (v2f.clipPos.z < buffer.getPixel(x, y).x && v2f.clipPos.z > 0) {
+              buffer.setPixel(x, y, new Vector4(v2f.clipPos.z, 0, 0, 1));
+              base.setPixel(x, y, shader.frag(v2f, sData));
             }
           }
+          //increment over 1 column
+          w0 += C0; w1 += C1; w2 += C2;
         }
+
+        //increment down 1 row
+        w0_row += R0; w1_row += R1; w2_row += R2;
       }
     }
     return new RenderOutput(base, buffer);
@@ -135,15 +162,15 @@ public abstract class Camera extends WorldObject {
 
   public RenderOutput renderLineOver(Vector3 start, Vector3 end, Shader shader, RenderOutput previous) {
 
-    BufferedImage buffer = previous.depthBuffer;
-    BufferedImage base = previous.image;
-    int screenWidth = base.getWidth();
-    int screenHeight = base.getHeight();
+    PreImage buffer = previous.depthBuffer;
+    PreImage base = previous.image;
+    int screenWidth = base.width;
+    int screenHeight = base.height;
 
     TransformMatrix M = new TransformMatrix();
     TransformMatrix V = this.getViewMatrix();
     TransformMatrix P = this.getProjectionMatrix();
-    ShaderData sData = new ShaderData(M, V, P, base.getWidth(), base.getHeight());
+    ShaderData sData = new ShaderData(M, V, P, screenWidth, screenHeight);
 
     Vector3 viewPlanePosition = this.getTransform().apply(new Vector3(0, 0, 0));
     Vector3 viewPlaneNormal = this.getTransform().apply(new Vector3(0, 0, 1)).minus(viewPlanePosition).normalized();
@@ -254,10 +281,10 @@ public abstract class Camera extends WorldObject {
       if(x >= 0 && x < screenWidth && y >= 0 && y < screenHeight) {
         Vector2 point = new Vector2((float) x / screenWidth, (float) y / screenHeight);
         VertexToFragment v2f = LineRendererMath.onLineInterpolation(point, vert1v2f, vert2v2f, sData);
-        if (v2f.clipPos.z <= Float.intBitsToFloat(buffer.getRGB(x, y)) + 0.0006f && v2f.clipPos.z > 0) {
-          buffer.setRGB(x, y, Float.floatToIntBits(v2f.clipPos.z));
-          int initalC = base.getRGB(x, y);
-          base.setRGB(x, y, RendererMath.blendColor(initalC, shader.frag(v2f, sData).getRGB(), 1 - factor).getRGB());
+        if (v2f.clipPos.z <= buffer.getPixel(x, y).x + 0.0003f && v2f.clipPos.z > 0) {
+          buffer.setPixel(x, y, new Vector4(v2f.clipPos.z, 0, 0, 1));
+          Vector4 initalC = base.getPixel(x, y);
+          base.setPixel(x, y, RendererMath.blendColor(initalC, shader.frag(v2f, sData), 1 - factor));
         }
       }
 
@@ -270,10 +297,10 @@ public abstract class Camera extends WorldObject {
       if(x >= 0 && x < screenWidth && y >= 0 && y < screenHeight) {
         Vector2 point = new Vector2((float) x / screenWidth, (float) y / screenHeight);
         VertexToFragment v2f = LineRendererMath.onLineInterpolation(point, vert1v2f, vert2v2f, sData);
-        if (v2f.clipPos.z <= Float.intBitsToFloat(buffer.getRGB(x, y)) + 0.0003f && v2f.clipPos.z > 0) {
-          buffer.setRGB(x, y, Float.floatToIntBits(v2f.clipPos.z));
-          int initalC = base.getRGB(x, y);
-          base.setRGB(x, y, RendererMath.blendColor(initalC, shader.frag(v2f, sData).getRGB(), factor).getRGB());
+        if (v2f.clipPos.z <= buffer.getPixel(x, y).x + 0.0003f && v2f.clipPos.z > 0) {
+          buffer.setPixel(x, y, new Vector4(v2f.clipPos.z, 0, 0, 1));
+          Vector4 initalC = base.getPixel(x, y);
+          base.setPixel(x, y, RendererMath.blendColor(initalC, shader.frag(v2f, sData), factor));
         }
       }
 

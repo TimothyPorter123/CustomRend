@@ -2,19 +2,20 @@ package view.shaders;
 
 import java.awt.Color;
 
+import model.math.Vector4;
 import view.ShaderData;
 import view.VertexData;
 import view.VertexToFragment;
 
 public class LineShader implements Shader {
 
-  Color color;
+  Vector4 color;
 
-  public LineShader(Color color) {
+  public LineShader(Vector4 color) {
     this.color = color;
   }
 
-  public void setColor(Color color) {
+  public void setColor(Vector4 color) {
     this.color = color;
   }
 
@@ -29,7 +30,7 @@ public class LineShader implements Shader {
   }
 
   @Override
-  public Color frag(VertexToFragment o, ShaderData s) {
+  public Vector4 frag(VertexToFragment o, ShaderData s) {
     return color;
   }
 }

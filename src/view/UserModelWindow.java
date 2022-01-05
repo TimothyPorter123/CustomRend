@@ -4,6 +4,7 @@ import java.awt.Color;
 
 import model.RenderObjectModel;
 import model.Scene3D;
+import model.math.Vector4;
 import model.objects.Camera;
 import model.RenderOutput;
 import model.math.Vector3;
@@ -22,7 +23,7 @@ public class UserModelWindow {
 
   public UserModelWindow(Shader defaultShader, Scene3D scene, Camera viewerCamera, int windowWidth, int windowHeight) {
     this.defaultShader = defaultShader;
-    this.defaultLineShader = new LineShader(Color.black);
+    this.defaultLineShader = new LineShader(new Vector4(0, 0, 0, 1));
     this.scene = scene;
     this.viewerCamera = viewerCamera;
     this.windowWidth = windowWidth;
@@ -71,17 +72,21 @@ public class UserModelWindow {
   }
 
   private RenderOutput drawObjectGrid(RenderOutput in) {
-    LineShader lineShader = new LineShader(Color.blue);
+    Vector4 blue = new Vector4(0 ,0, 1, 1);
+    Vector4 gray = new Vector4(0.5f, 0.5f, 0.5f, 1);
+    Vector4 red = new Vector4(1, 0, 0, 1);
+
+    LineShader lineShader = new LineShader(blue);
     //LineRenderer lineRenderer = new LineRenderer(lineShader, windowWidth, windowHeight);
     int lineCount = 30;
     RenderOutput withLine = in;
     for(int x = -lineCount; x < lineCount + 1; x++) {
-      lineShader.setColor(x == 0 ? Color.blue : Color.gray);
+      lineShader.setColor(x == 0 ? blue : gray);
       withLine = viewerCamera.renderLineOver(new Vector3(x, 0, lineCount), new Vector3(x, 0, -lineCount),
               lineShader, withLine);
     }
     for(int z = -lineCount; z < lineCount + 1; z++) {
-      lineShader.setColor(z == 0 ? Color.red : Color.gray);
+      lineShader.setColor(z == 0 ? red : gray);
       withLine = viewerCamera.renderLineOver(new Vector3(lineCount, 0, z), new Vector3(-lineCount, 0, z),
               lineShader, withLine);
     }

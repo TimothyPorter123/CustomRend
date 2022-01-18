@@ -1,6 +1,8 @@
 package model.objects;
 
 import java.awt.*;
+import java.lang.reflect.Array;
+import java.util.ArrayList;
 
 import model.RenderObjectModel;
 import model.RenderOutput;
@@ -23,7 +25,7 @@ public abstract class Camera extends WorldObject {
   protected TransformMatrix viewMatrix;
 
   public Camera() {
-    this.viewMatrix = this.getTransform().inverse();
+    this.viewMatrix = this.getTransform().getMatrix().inverse();
   }
 
   public abstract TransformMatrix getProjectionMatrix();
@@ -40,10 +42,55 @@ public abstract class Camera extends WorldObject {
 
   protected abstract boolean orthographic();
 
-  @Override
-  public void transform(TransformMatrix transform) {
-    super.transform(transform);
-    this.viewMatrix = this.getTransform().inverse();
+  public void updateViewMatrix() {
+    this.viewMatrix = this.getTransform().getMatrix().inverse();
+  }
+
+  public Vector2[] findSelectionPoints(RenderObjectModel model, int selectionMode, PreImage depth) {
+    ArrayList<Vector3> clipPositions = new ArrayList<Vector3>();
+    TransformMatrix MVP = this.getProjectionMatrix().multiply(this.getViewMatrix().multiply(model.getTransform().getMatrix()));
+    Vector3[] verts = model.getVertices();
+    switch(selectionMode) {
+      case 0:
+        for(int v = 0; v < verts.length; v++) {
+          clipPositions.add(MVP.apply(verts[v]));
+        }
+        break;
+      case 1:
+        int[] edges = model.getEdges();
+        for(int e = 0; e < edges.length; e += 2) {
+          clipPositions.add(MVP.apply(verts[edges[e]].plus(verts[edges[e + 1]]).scale(0.5f)));
+        }
+        break;
+      case 2:
+        int[][] faces = model.getFaces();
+        for(int f = 0; f < faces.length; f++) {
+          Vector3 combVector = new Vector3(0, 0, 0);
+          for(int i = 0; i < faces[f].length; i++) {
+            combVector = combVector.plus(verts[faces[f][i]]);
+          }
+          clipPositions.add(MVP.apply(combVector.scale(1f / faces[f].length)));
+        }
+        break;
+    }
+
+    ArrayList<Vector2> selectionPoints = new ArrayList<Vector2>();
+    for(Vector3 clipPosUnscaled : clipPositions) {
+      Vector3 clipPos = clipPosUnscaled.scale(0.5f).plus(new Vector3(0.5f, 0.5f, 0.5f));
+      int x = Math.round(clipPos.x * depth.width);
+      int y = Math.round(clipPos.y * depth.height);
+      if(x >= 0 && x < depth.width && y >= 0 && y < depth.height) {
+        if(clipPos.z <= depth.sample(new Vector2(clipPos.x * depth.width, clipPos.y * depth.height)).x + 0.0005f && clipPos.z > 0) {
+          selectionPoints.add(clipPos.xy());
+        }
+      }
+    }
+
+    Vector2[] finalPoints = new Vector2[selectionPoints.size()];
+    for(int i = 0; i < finalPoints.length; i++) {
+      finalPoints[i] = selectionPoints.get(i);
+    }
+    return finalPoints;
   }
 
   public RenderOutput renderObjectSurfaceOver(RenderObjectModel model, Shader shader, RenderOutput previous) {
@@ -52,15 +99,15 @@ public abstract class Camera extends WorldObject {
     int screenWidth = base.width;
     int screenHeight = base.height;
 
-    TransformMatrix M = model.getTransform();
+    TransformMatrix M = model.getTransform().getMatrix();
     TransformMatrix V = this.getViewMatrix();
     TransformMatrix P = this.getProjectionMatrix();
     ShaderData sData = new ShaderData(M, V, P, screenWidth, screenHeight);
 
     Mesh toRender = model.getRenderableMesh();
 
-    Vector3 viewPlanePosition = this.getTransform().apply(new Vector3(0, 0, 0));
-    Vector3 viewPlaneNormal = this.getTransform().apply(new Vector3(0, 0, 1)).minus(viewPlanePosition).normalized();
+    Vector3 viewPlanePosition = this.getTransform().getMatrix().apply(new Vector3(0, 0, 0));
+    Vector3 viewPlaneNormal = this.getTransform().getMatrix().apply(new Vector3(0, 0, 1)).minus(viewPlanePosition).normalized();
     TransformMatrix IM = M.inverse();
     //backface culling
     if(this.orthographic()) {
@@ -153,8 +200,8 @@ public abstract class Camera extends WorldObject {
     int[] edges = model.getEdges();
     Vector3[] verts = model.getVertices();
     for(int e = 0; e < edges.length; e += 2) {
-      Vector3 start = model.getTransform().apply(verts[edges[e]]);
-      Vector3 end = model.getTransform().apply(verts[edges[e + 1]]);
+      Vector3 start = model.getTransform().getMatrix().apply(verts[edges[e]]);
+      Vector3 end = model.getTransform().getMatrix().apply(verts[edges[e + 1]]);
       curr = renderLineOver(start, end, shader, curr);
     }
     return curr;
@@ -172,8 +219,8 @@ public abstract class Camera extends WorldObject {
     TransformMatrix P = this.getProjectionMatrix();
     ShaderData sData = new ShaderData(M, V, P, screenWidth, screenHeight);
 
-    Vector3 viewPlanePosition = this.getTransform().apply(new Vector3(0, 0, 0));
-    Vector3 viewPlaneNormal = this.getTransform().apply(new Vector3(0, 0, 1)).minus(viewPlanePosition).normalized();
+    Vector3 viewPlanePosition = this.getTransform().getMatrix().apply(new Vector3(0, 0, 0));
+    Vector3 viewPlaneNormal = this.getTransform().getMatrix().apply(new Vector3(0, 0, 1)).minus(viewPlanePosition).normalized();
     viewPlanePosition = viewPlanePosition.plus(viewPlaneNormal.scale(this.getNearClipPlane()));
 
     //trim to camera forward plane
@@ -306,6 +353,33 @@ public abstract class Camera extends WorldObject {
 
     }
 
+    return new RenderOutput(base, buffer);
+  }
+
+  public RenderOutput renderSelectionPoints(Vector2[] points, Shader shader, RenderOutput previous) {
+    PreImage buffer = previous.depthBuffer;
+    PreImage base = previous.image;
+    int width = previous.image.width;
+    int height = previous.image.height;
+    ShaderData s = new ShaderData(new TransformMatrix(), new TransformMatrix(), new TransformMatrix(), width, height);
+    int pointPixelSize = 2;
+
+    for(Vector2 point : points) {
+      VertexToFragment pointData = new VertexToFragment();
+      pointData.uv = point;
+      pointData.normal = new Vector3(0, 0, 1);
+      pointData.clipPos = new Vector3(point.x, point.y, 0);
+      Vector4 col = shader.frag(pointData, s);
+      Vector2 start = new Vector2(point.x * width - pointPixelSize, point.y * height - pointPixelSize);
+      Vector2 end = new Vector2(point.x * width + pointPixelSize, point.y * height + pointPixelSize);
+      for(int x = (int)start.x; x < end.x + 1; x++) {
+        for(int y = (int)start.y; y < end.y + 1; y++) {
+          if(x >= 0 && x < width && y >= 0 && y < height) {
+            base.setPixel(x, y, col);
+          }
+        }
+      }
+    }
     return new RenderOutput(base, buffer);
   }
 }

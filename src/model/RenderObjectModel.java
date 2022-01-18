@@ -1,5 +1,6 @@
 package model;
 
+import model.math.Transform;
 import model.math.TransformMatrix;
 import model.math.Vector2;
 import model.math.Vector3;
@@ -26,5 +27,5 @@ public interface RenderObjectModel {
 
   public Vector2[][] getUVs();
 
-  public TransformMatrix getTransform();
+  public Transform getTransform();
 }

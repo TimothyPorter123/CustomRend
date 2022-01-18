@@ -39,6 +39,22 @@ public class Vector4 {
             + (int)(this.z * 255);
   }
 
+  public Vector4 scale(float factor) {
+    return new Vector4(this.x * factor, this.y * factor, this.z * factor, this.w * factor);
+  }
+
+  public Vector4 plus(Vector4 other) {
+    return new Vector4(this.x + other.x, this.y + other.y, this.z + other.z, this.w + other.w);
+  }
+
+  public float magnitude() {
+    return (float)Math.sqrt(this.x * this.x + this.y * this.y + this.z * this.z + this.w * this.w);
+  }
+
+  public Vector4 normalized() {
+    return new Vector4(x, y, z, w).scale(1f / this.magnitude());
+  }
+
   @Override
   public String toString() {
     return "(" + this.x + ", " + this.y + ", " + this.z + ", " + this.w + ")";

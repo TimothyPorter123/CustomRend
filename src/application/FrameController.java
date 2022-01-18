@@ -8,7 +8,9 @@ import java.awt.image.BufferedImage;
 
 import javax.swing.*;
 
+import controller.KeyboardController;
 import model.*;
+import model.math.Vector4;
 import model.objects.SimpleUVSphere;
 import view.PreImage;
 import view.UserModelWindow;
@@ -36,8 +38,9 @@ public class FrameController {
   JFrame mainFrame;
   JPanel renderPanel;
 
-  //remove
+  //remove ?
   Camera mainCam;
+  KeyboardController keyController;
 
   long lastFrameMilli = System.currentTimeMillis();
   int framesPassed;
@@ -48,6 +51,7 @@ public class FrameController {
 
     renderPanel = new JPanel();
     renderPanel.setPreferredSize(new Dimension(imageWidth, imageHeight));
+    renderPanel.setFocusable(true);
     JPanel infoPanel = new JPanel();
     infoPanel.setPreferredSize(new Dimension(imageWidth, 50));
     infoField = new JTextField("default text");
@@ -55,13 +59,20 @@ public class FrameController {
     renderPanel.addMouseListener(new MouseAdapter() {
       @Override
       public void mouseClicked(MouseEvent e) {
-        mainCam.transform(new TransformMatrix().rotate(new Vector3(5, 0, 0)));
+        //mainCam.transform(new TransformMatrix().rotate(new Vector3(5, 0, 0)));
+
+
+        mainCam.getTransform().rotate(new Vector3(1, 0, 0), -5);
+        mainCam.updateViewMatrix();
         mainFrame.repaint();
       }
     });
+    keyController = new KeyboardController();
+    renderPanel.addKeyListener(keyController);
     mainFrame.setLayout(new BoxLayout(mainFrame.getContentPane(), BoxLayout.PAGE_AXIS));
     mainFrame.add(renderPanel);
     mainFrame.add(infoPanel);
+    renderPanel.requestFocus();
     mainFrame.pack();
 
     mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -86,8 +97,14 @@ public class FrameController {
 
     //CLIPPING PLANE =/= 0
     frame.mainCam = new PerspectiveCamera(90, 0.1f, 1000f, (float)frame.imageHeight / frame.imageWidth);
-    frame.mainCam.transform(new TransformMatrix().move(new Vector3(3.0f, 3.0f, 3.0f)));
-    frame.mainCam.transform(new TransformMatrix().rotate(new Vector3(45, 225, 0)));
+    frame.mainCam.getTransform().translate(new Vector3(-3.0f, 3.0f, -3.0f));
+
+    //frame.mainCam.getTransform().rotate(new Vector4( 0, 0.923879f, 0, -0.38268f).normalized());
+
+    frame.mainCam.getTransform().rotate(new Vector3(0, 1, 0), 45);
+    frame.mainCam.getTransform().rotate(new Vector3(1, 0, 0), 45);
+
+    frame.mainCam.updateViewMatrix();
 
     BufferedImage checkerTexture = new BufferedImage(9, 9, BufferedImage.TYPE_INT_ARGB);
     for(int x = 0; x < 9; x++) {
@@ -107,11 +124,12 @@ public class FrameController {
     frame.sphere.setSmoothShading(true);
     mainWindowBuilder.setScene(new Scene3D.SceneBuilder().addObject(frame.sphere)/*.addObject(frame.secondSquare)*/.build());
     UserModelWindow mainWindow = mainWindowBuilder.build();
+    mainWindow.setKeyController(frame.keyController);
 
     while(true) {
       //frame.squareModel.transform(frame.simpleRotate);
       //frame.secondSquare.transform(frame.reverseRotate);
-      frame.sphere.transform(frame.reverseRotate);
+      //frame.sphere.transform(frame.reverseRotate);
       mainWindow.render();
       frame.UpdateFrame(mainWindow);
     }

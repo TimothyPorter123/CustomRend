@@ -5,7 +5,6 @@ import java.util.Arrays;
 import java.util.List;
 
 import model.RenderObjectModel;
-import model.math.TransformMatrix;
 import model.math.Vector2;
 import model.math.Vector3;
 
@@ -151,9 +150,6 @@ public abstract class SimpleModel extends WorldObject implements RenderObjectMod
     }
     return false;
   }
-
-  @Override
-  public TransformMatrix getTransform() { return this.transform; }
 
   protected abstract void construct();
 

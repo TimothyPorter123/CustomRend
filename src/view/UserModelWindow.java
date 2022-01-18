@@ -2,8 +2,11 @@ package view;
 
 import java.awt.Color;
 
+import controller.KeyboardController;
+import controller.UserWindowState;
 import model.RenderObjectModel;
 import model.Scene3D;
+import model.math.TransformMatrix;
 import model.math.Vector4;
 import model.objects.Camera;
 import model.RenderOutput;
@@ -16,10 +19,12 @@ public class UserModelWindow {
   private Shader defaultShader;
   private Shader defaultLineShader;
   private Scene3D scene;
-  private final Camera viewerCamera;
+  public final Camera viewerCamera;
   private int windowWidth;
   private int windowHeight;
   private RenderOutput MRR;
+
+  public UserWindowState state;
 
   public UserModelWindow(Shader defaultShader, Scene3D scene, Camera viewerCamera, int windowWidth, int windowHeight) {
     this.defaultShader = defaultShader;
@@ -68,7 +73,13 @@ public class UserModelWindow {
       lines = viewerCamera.renderObjectWireFrameOver(o, defaultLineShader, lines);
     }
 
-    MRR = lines;
+    RenderOutput verts = lines;
+
+    for(RenderObjectModel o : scene.getVisibleObjects()) {
+      verts = viewerCamera.renderSelectionPoints(viewerCamera.findSelectionPoints(o, 0, verts.depthBuffer), defaultLineShader, verts);
+    }
+
+    MRR = verts;
   }
 
   private RenderOutput drawObjectGrid(RenderOutput in) {
@@ -91,5 +102,9 @@ public class UserModelWindow {
               lineShader, withLine);
     }
     return withLine;
+  }
+
+  public void setKeyController(KeyboardController controller) {
+    controller.window = this;
   }
 }

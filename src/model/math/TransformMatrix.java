@@ -80,10 +80,36 @@ public class TransformMatrix extends Matrix {
 
   public TransformMatrix scale(Vector3 scaleFactors) {
     TransformMatrix scaleMatrix = new TransformMatrix();
-    scaleMatrix.assign(0, 0, this.get(0, 0) * scaleFactors.x);
-    scaleMatrix.assign(1, 1, this.get(1, 1) + scaleFactors.y);
-    scaleMatrix.assign(2, 2, this.get(2, 2) + scaleFactors.z);
+    scaleMatrix.assign(0, 0, scaleFactors.x);
+    scaleMatrix.assign(1, 1, scaleFactors.y);
+    scaleMatrix.assign(2, 2, scaleFactors.z);
     return this.multiply(scaleMatrix);
+  }
+
+  public TransformMatrix rotate(Vector4 quaternion) {
+    Vector4 q = quaternion.normalized();
+    TransformMatrix rotMatrix = new TransformMatrix();
+    float q01 = q.w * q.x;
+    float q02 = q.w * q.y;
+    float q03 = q.w * q.z;
+    float q12 = q.x * q.y;
+    float q13 = q.x * q.z;
+    float q23 = q.y * q.z;
+    //diagonals
+    rotMatrix.assign(0, 0, 2 * (q.w * q.w + q.x * q.x) - 1);
+    rotMatrix.assign(1, 1, 2 * (q.w * q.w + q.y * q.y) - 1);
+    rotMatrix.assign(2, 2, 2 * (q.w * q.w + q.z * q.z) - 1);
+    //fills
+    rotMatrix.assign(0, 1, 2 * (q12 - q03));
+    rotMatrix.assign(0, 2, 2 * (q13 + q02));
+
+    rotMatrix.assign(1, 0, 2 * (q12 + q03));
+    rotMatrix.assign(1, 2, 2 * (q23 - q01));
+
+    rotMatrix.assign(2, 0, 2 * (q13 - q02));
+    rotMatrix.assign(2, 1, 2 * (q23 + q01));
+
+    return this.multiply(rotMatrix);
   }
 
   public TransformMatrix rotate(Vector3 eulerAngles) {

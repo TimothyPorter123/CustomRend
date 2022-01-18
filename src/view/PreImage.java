@@ -2,6 +2,7 @@ package view;
 
 import java.awt.image.BufferedImage;
 
+import model.math.Vector2;
 import model.math.Vector4;
 
 public class PreImage {
@@ -38,6 +39,18 @@ public class PreImage {
     } else {
       throw new IllegalArgumentException("Invalid pixel selection: (" + x + ", " + y + ")");
     }
+  }
+
+  public Vector4 sample(Vector2 point) {
+    int lowX = (int)point.x;
+    int lowY = (int)point.y;
+    int highX = lowX + 1 < this.width ? lowX + 1 : lowX;
+    int highY = lowY + 1 < this.height ? lowY + 1 : lowY;
+    float ratioX = point.x - lowX;
+    float ratioY = point.y - lowY;
+    Vector4 top = this.getPixel(lowX, highY).scale(1 - ratioX).plus(this.getPixel(highX, highY).scale(ratioX));
+    Vector4 bottom = this.getPixel(lowX, lowY).scale(1 - ratioX).plus(this.getPixel(highX, lowY).scale(ratioX));
+    return bottom.scale(1 - ratioY).plus(top.scale(ratioY));
   }
 
   public BufferedImage renderToImage() {

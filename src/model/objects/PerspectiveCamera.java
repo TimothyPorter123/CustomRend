@@ -42,7 +42,6 @@ public class PerspectiveCamera extends Camera {
     //Assign scaling for z component
     projection.assign(2, 2, c);
     projection.assign(2, 3, -c * this.nearClipPlane);
-    System.out.println(projection.toString());
     return projection;
   }
 

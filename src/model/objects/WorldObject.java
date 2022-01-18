@@ -1,20 +1,17 @@
 package model.objects;
 
+import model.math.Transform;
 import model.math.TransformMatrix;
 
 public abstract class WorldObject {
 
-  TransformMatrix transform;
+  Transform transform;
 
   public WorldObject() {
-    this.transform = new TransformMatrix();
+    this.transform = new Transform();
   }
 
-  public TransformMatrix getTransform() {
+  public Transform getTransform() {
     return this.transform;
-  }
-
-  public void transform(TransformMatrix transformation) {
-    this.transform = this.transform.multiply(transformation);
   }
 }

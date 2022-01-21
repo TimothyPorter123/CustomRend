@@ -1,12 +1,10 @@
 package view;
 
-import java.awt.Color;
-
 import controller.KeyboardController;
+import controller.MouseController;
 import controller.UserWindowState;
 import model.RenderObjectModel;
 import model.Scene3D;
-import model.math.TransformMatrix;
 import model.math.Vector4;
 import model.objects.Camera;
 import model.RenderOutput;
@@ -18,10 +16,11 @@ public class UserModelWindow {
 
   private Shader defaultShader;
   private Shader defaultLineShader;
-  private Scene3D scene;
+  public Scene3D scene;
   public final Camera viewerCamera;
-  private int windowWidth;
-  private int windowHeight;
+  public Vector3 viewerCameraFocus;
+  public int windowWidth;
+  public int windowHeight;
   private RenderOutput MRR;
 
   public UserWindowState state;
@@ -31,8 +30,10 @@ public class UserModelWindow {
     this.defaultLineShader = new LineShader(new Vector4(0, 0, 0, 1));
     this.scene = scene;
     this.viewerCamera = viewerCamera;
+    this.viewerCameraFocus = new Vector3(0, 0, 0);
     this.windowWidth = windowWidth;
     this.windowHeight = windowHeight;
+    this.state = new UserWindowState();
   }
 
   public static class UserWindowBuilder {
@@ -105,6 +106,10 @@ public class UserModelWindow {
   }
 
   public void setKeyController(KeyboardController controller) {
+    controller.window = this;
+  }
+
+  public void setMouseController(MouseController controller) {
     controller.window = this;
   }
 }

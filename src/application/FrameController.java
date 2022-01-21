@@ -3,12 +3,12 @@ package application;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 
 import javax.swing.*;
 
 import controller.KeyboardController;
+import controller.MouseController;
 import model.*;
 import model.math.Vector4;
 import model.objects.SimpleUVSphere;
@@ -17,7 +17,6 @@ import view.UserModelWindow;
 import model.objects.Camera;
 import model.objects.PerspectiveCamera;
 import model.objects.SimpleTriangle;
-import model.math.TransformMatrix;
 import model.math.Vector3;
 import view.shaders.SimpleShader;
 import model.objects.SimpleSquare;
@@ -28,9 +27,6 @@ public class FrameController {
   SimpleSquare secondSquare;
   SimpleTriangle triangle;
   SimpleUVSphere sphere;
-  TransformMatrix simpleRotate;
-  TransformMatrix reverseRotate;
-  TransformMatrix simpleMove;
 
   int imageWidth = 800;
   int imageHeight = 600;
@@ -41,6 +37,7 @@ public class FrameController {
   //remove ?
   Camera mainCam;
   KeyboardController keyController;
+  MouseController mouseController;
 
   long lastFrameMilli = System.currentTimeMillis();
   int framesPassed;
@@ -56,19 +53,11 @@ public class FrameController {
     infoPanel.setPreferredSize(new Dimension(imageWidth, 50));
     infoField = new JTextField("default text");
     infoPanel.add(infoField);
-    renderPanel.addMouseListener(new MouseAdapter() {
-      @Override
-      public void mouseClicked(MouseEvent e) {
-        //mainCam.transform(new TransformMatrix().rotate(new Vector3(5, 0, 0)));
-
-
-        mainCam.getTransform().rotate(new Vector3(1, 0, 0), -5);
-        mainCam.updateViewMatrix();
-        mainFrame.repaint();
-      }
-    });
     keyController = new KeyboardController();
+    mouseController = new MouseController();
     renderPanel.addKeyListener(keyController);
+    renderPanel.addMouseListener(mouseController);
+    renderPanel.addMouseMotionListener(mouseController);
     mainFrame.setLayout(new BoxLayout(mainFrame.getContentPane(), BoxLayout.PAGE_AXIS));
     mainFrame.add(renderPanel);
     mainFrame.add(infoPanel);
@@ -84,10 +73,6 @@ public class FrameController {
     secondSquare = new SimpleSquare();
     triangle = new SimpleTriangle();
     sphere = new SimpleUVSphere();
-
-    simpleRotate = new TransformMatrix().rotate(new Vector3(1.0f, 1.0f, 0.0f));
-    reverseRotate = new TransformMatrix().rotate(new Vector3(-1.0f, -1.0f, 0.0f));
-    simpleMove = new TransformMatrix().move(new Vector3(0.0f, 0.1f, 0.0f));
   }
 
 
@@ -122,16 +107,22 @@ public class FrameController {
     mainWindowBuilder.setCamera(frame.mainCam);
     mainWindowBuilder.setDimension(frame.imageWidth, frame.imageHeight);
     frame.sphere.setSmoothShading(true);
-    mainWindowBuilder.setScene(new Scene3D.SceneBuilder().addObject(frame.sphere)/*.addObject(frame.secondSquare)*/.build());
+    mainWindowBuilder.setScene(new Scene3D.SceneBuilder().addObject(frame.sphere)/*.addObject(new SimpleUVSphere())*/.build());
+    //frame.sphere.getTransform().translate(new Vector3(2, 0, 0));
+    //frame.sphere.getTransform().scale(new Vector3(0.5f, 0.5f, 0.5f));
     UserModelWindow mainWindow = mainWindowBuilder.build();
     mainWindow.setKeyController(frame.keyController);
+    mainWindow.setMouseController(frame.mouseController);
 
     while(true) {
       //frame.squareModel.transform(frame.simpleRotate);
       //frame.secondSquare.transform(frame.reverseRotate);
-      //frame.sphere.transform(frame.reverseRotate);
+      //frame.sphere.getTransform().globalRotate(new Vector3(1, 0, 0), 10);
+
       mainWindow.render();
       frame.UpdateFrame(mainWindow);
+      frame.keyController.handleInput();
+      frame.mouseController.handleInput();
     }
   }
 

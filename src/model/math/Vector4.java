@@ -21,6 +21,13 @@ public class Vector4 {
     this.w = 1f;
   }
 
+  public Vector4(Vector3 xyz, float w) {
+    this.x = xyz.x;
+    this.y = xyz.y;
+    this.z = xyz.z;
+    this.w = w;
+  }
+
   public Vector4(int RGB) {
     this.x = ((RGB & 0x00ff0000) >> 16) / 255f;
     this.y = ((RGB & 0x0000ff00) >> 8) / 255f;

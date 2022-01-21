@@ -51,16 +51,38 @@ public class Transform {
     this.rotate(new Vector4(a.x * fac, a.y * fac, a.z * fac, (float)Math.cos(angle / 2)));
   }
 
+  public void globalRotate(Vector3 axis, float angle) {
+    axis = axis.rotate(new Vector4(this.rotation.xyz().scale(-1f), this.rotation.w));
+    this.rotate(axis, angle);
+  }
+
+  public void orbit(Vector3 point, Vector3 axis, float angle) {
+    Vector3 a = axis.normalized();
+    this.globalRotate(a, angle);
+    Vector3 posV = this.position.minus(point);
+    angle = angle / 180f * (float)Math.PI;
+    float fac = (float)Math.sin(angle / 2);
+    Vector3 newV = posV.rotate(new Vector4(a.x * fac, a.y * fac, a.z * fac, (float)Math.cos(angle / 2)));
+    this.position = point.plus(newV);
+    this.updateMatrix();
+  }
+
   protected void updateMatrix() {
     this.matrix = new TransformMatrix().move(this.position).rotate(this.rotation).scale(this.scale);
   }
 
-  //bad (obviously)
+  //better, but maybe not great
   public Vector3 forward() {
-    return this.getMatrix().inverse().apply(new Vector3(0, 0, 1).plus(this.position));
+    return new Vector3(0, 0, 1).rotate(new Vector4(this.rotation.xyz().scale(1f), this.rotation.w));
+    //return this.getMatrix().inverse().apply(new Vector3(0, 0, 1).plus(this.position));
   }
   public Vector3 up() {
-    return this.getMatrix().inverse().apply(new Vector3(0, 1, 0).plus(this.position));
+    return new Vector3(0, 1, 0).rotate(new Vector4(this.rotation.xyz().scale(1f), this.rotation.w));
+    //return this.getMatrix().inverse().apply(new Vector3(0, 1, 0).plus(this.position));
+  }
+  public Vector3 right() {
+    return new Vector3(1, 0, 0).rotate(new Vector4(this.rotation.xyz().scale(1f), this.rotation.w));
+    //return this.getMatrix().inverse().apply(new Vector3(1, 0, 0).plus(this.position));
   }
 
   public TransformMatrix getMatrix() {

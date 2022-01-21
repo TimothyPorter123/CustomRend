@@ -35,6 +35,13 @@ public class Vector3 {
             vOne.x * vTwo.y - vOne.y * vTwo.x);
   }
 
+  public Vector3 rotate(Vector4 quaternion) {
+    Vector4 q = quaternion.normalized();
+    Vector3 u = q.xyz();
+
+    return u.scale(Vector3.dot(u, this) * 2).plus(this.scale(q.w * q.w - Vector3.dot(u, u))).plus(Vector3.cross(u, this).scale(2 * q.w));
+  }
+
   public Vector3 normalized() {
     float mag = this.magnitude();
     return new Vector3(this.x / mag, this.y / mag, this.z / mag);

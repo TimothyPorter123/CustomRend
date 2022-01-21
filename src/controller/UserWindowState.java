@@ -6,6 +6,7 @@ public class UserWindowState {
 
   public int selectionMode;
   public enum ActionMode {
+    None,
     Translate,
     Rotate,
     Scale,
@@ -13,7 +14,7 @@ public class UserWindowState {
     CameraRotate,
     CameraZoom
   }
-  public ActionMode currentMode;
+  public ActionMode currentMode = ActionMode.None;
   public Vertex[] selection;
 
 }
